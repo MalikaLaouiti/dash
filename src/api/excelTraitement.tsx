@@ -126,8 +126,8 @@ function cleanRow(row: Record<string, any>): Record<string, any> {
  * Nettoie une valeur individuelle
  */
 function cleanValue(value: any): any {
-  if (value === null || value === undefined) {
-    return '';
+  if (value === null || value === undefined || value === '') {
+    return 'null';
   }
   
   if (typeof value === 'string') {
