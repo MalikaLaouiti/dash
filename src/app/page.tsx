@@ -3,6 +3,8 @@
 
 import { useState } from 'react';
 import { excelToJson, cleanExcelData, extractHeadersFromFile, getSheetNamesFromFile } from '@/api/excelTraitement';
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default function Home() {
   const [data, setData] = useState<any[]>([]);
@@ -38,17 +40,23 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <input type="file" accept=".xlsx,.xls" onChange={handleFile} />
-      
-      {data.map((sheet, index) => (
-        <div key={index}>
-          <h3>Feuille: {sheet.sheetName}</h3>
-          <p>En-têtes: {sheet.headers.join(', ')}</p>
-          <pre>{JSON.stringify(sheet.data.slice(0, 3), null, 2)}</pre>
-        </div>
-      ))}
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <main>
+        <SidebarTrigger />
+          <div>
+            <input type="file" accept=".xlsx,.xls" onChange={handleFile} />
+            
+            {data.map((sheet, index) => (
+              <div key={index}>
+                <h3>Feuille: {sheet.sheetName}</h3>
+                <p>En-têtes: {sheet.headers.join(', ')}</p>
+                <pre>{JSON.stringify(sheet.data.slice(0, 3), null, 2)}</pre>
+              </div>
+            ))}
+          </div>
+      </main>
+    </SidebarProvider>
   );
 };
 
