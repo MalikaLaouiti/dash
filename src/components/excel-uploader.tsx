@@ -2,7 +2,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -74,8 +73,8 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
     <div className="flex items-center gap-4">
       {fileName && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <FileSpreadsheet className="h-4 w-4" />
-          <span>{fileName}</span>
+          <FileSpreadsheet className="h-4 w-4 ml-3" />
+          <span >{fileName}</span>
           {uploadStatus === "success" && <CheckCircle className="h-4 w-4 text-green-500" />}
           {uploadStatus === "error" && <AlertCircle className="h-4 w-4 text-red-500" />}
         </div>

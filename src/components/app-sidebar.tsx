@@ -55,7 +55,6 @@ const items = [
 
 export function AppSidebar() {
   return (
-
         <Sidebar>
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
