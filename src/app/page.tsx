@@ -5,7 +5,7 @@
 // import { excelToJson, cleanExcelData, extractHeadersFromFile, getSheetNamesFromFile } from '@/api/excelTraitement';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { HeaderBar } from '@/components/headerbar';
+import { HeaderBar } from '@/components/header-bar';
 // import { SearchBar } from "@/components/search-bar";
 
 export default function Home() {
