@@ -1,3 +1,4 @@
+"use client"
 import { CalendarSearch, Home, ChartNoAxesCombined, UserStar, Building2, Database } from "lucide-react"
 
 import {
