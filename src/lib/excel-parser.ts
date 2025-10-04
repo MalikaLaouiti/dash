@@ -61,12 +61,12 @@ export class ExcelParser {
     }
 
     // Detect companies data
-    if (headerStr.includes("societe") || headerStr.includes("entreprise") || headerStr.includes("secteur")) {
+    if (headerStr.includes("société") || headerStr.includes("entreprise") || headerStr.includes("Host")) {
       return "companies"
     }
 
     // Detect supervisors data
-    if (headerStr.includes("encadreur") || headerStr.includes("superviseur") || headerStr.includes("professeur")) {
+    if (headerStr.includes("encadrant isimm") || headerStr.includes("Academic Supervisor") || headerStr.includes("professeur")) {
       return "supervisors"
     }
 
