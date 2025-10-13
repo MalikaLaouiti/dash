@@ -4,10 +4,10 @@ import type React from "react"
 import { useState } from "react"
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ExcelParser } from "@/lib/excel-parser"
+import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser"
 
 interface ExcelUploaderProps {
-  onDataLoad: (data: any) => void
+  onDataLoad: (data: ParsedExcelData) => void
 }
 
 export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
@@ -46,10 +46,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
 
           const parsedData = ExcelParser.parseExcelData(rawData)
 
-          onDataLoad({
-            ...rawData,
-            parsed: parsedData,
-          })
+          onDataLoad(parsedData)
           console.log("Données Excel importées:", parsedData)
           setUploadStatus("success")
         } catch (error) {

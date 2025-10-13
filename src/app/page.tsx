@@ -4,8 +4,15 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HeaderBar } from '@/components/header-bar';
 import { SearchBar } from "@/components/search-bar";
+import { ExcelUploader } from "@/components/excel-uploader";
+import { DataTable } from "@/components/data-table";
+import { JsonPreview } from "@/components/json-preview";
+import { UsageInstructions } from "@/components/usage-instructions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { cleanExcelData, excelToJson, extractHeadersFromFile, getSheetNamesFromFile } from "@/api/excelTraitement";
+import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("")
@@ -14,37 +21,14 @@ export default function Home() {
     companies: true,
     supervisors: true,
   })
-  const [data, setData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
+  const [activeTab, setActiveTab] = useState<"students" | "companies" | "supervisors" | "raw">("students");
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      // 1. Conversion complète
-      const result = await excelToJson(file);
-      console.log('Toutes les feuilles:', result);
-
-      // 2. Juste les en-têtes
-      const headers = await extractHeadersFromFile(file);
-      console.log('En-têtes par feuille:', headers);
-
-      // 3. Juste les noms de feuilles
-      const sheetNames = await getSheetNamesFromFile(file);
-      console.log('Noms des feuilles:', sheetNames);
-
-      // 4. Nettoyage des données
-      const cleanedData = result.sheets.map(sheet => ({
-        ...sheet,
-        data: cleanExcelData(sheet.data)
-      }));
-
-      setData(cleanedData);
-
-    } catch (error) {
-      console.error('Erreur:', error);
-    }
+  const handleDataLoad = (data: ParsedExcelData) => {
+    setParsedData(data);
   };
+
+  const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters) : [];
 
   return (
     <SidebarProvider>
@@ -53,28 +37,99 @@ export default function Home() {
         <main className="flex-1 flex flex-col overflow-hidden">
           <SidebarTrigger />
           <HeaderBar />
+          
+          <div className="flex items-center gap-4 p-4 border-b">
+            <ExcelUploader onDataLoad={handleDataLoad} />
           <SearchBar
             query={searchQuery}
             onQueryChange={setSearchQuery}
             filters={searchFilters}
             onFiltersChange={setSearchFilters}
           />
+          </div>
 
-          <div>
+          <div className="flex-1 overflow-auto p-4 space-y-6">
+            {!parsedData && <UsageInstructions />}
             
-            
-            {data.map((sheet, index) => (
-              <div key={index}>
-                <h3>Feuille: {sheet.sheetName}</h3>
-                <p>En-têtes: {sheet.headers.join(', ')}</p>
-                <pre>{JSON.stringify(sheet.data.slice(0, 3), null, 2)}</pre>
+            {parsedData && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Résumé des données importées
+                    <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors} éléments</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Données extraites du fichier Excel et organisées par catégorie
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">{parsedData.summary.totalStudents}</Badge>
+                      <span className="text-sm">Étudiants</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{parsedData.summary.totalCompanies}</Badge>
+                      <span className="text-sm">Entreprises</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
+                      <span className="text-sm">Encadreurs</span>
+                    </div>
               </div>
-            ))}
+                  <div className="mt-4">
+                    <span className="text-sm text-muted-foreground">Années couvertes: </span>
+                    {parsedData.summary.yearsCovered.map(year => (
+                      <Badge key={year} variant="outline" className="mr-2">{year}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="students">
+                  Étudiants ({parsedData?.summary.totalStudents || 0})
+                </TabsTrigger>
+                <TabsTrigger value="companies">
+                  Entreprises ({parsedData?.summary.totalCompanies || 0})
+                </TabsTrigger>
+                <TabsTrigger value="supervisors">
+                  Encadreurs ({parsedData?.summary.totalSupervisors || 0})
+                </TabsTrigger>
+                <TabsTrigger value="raw">
+                  Vue combinée ({filteredData.length})
+                </TabsTrigger>
+                <TabsTrigger value="json">
+                  JSON
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="students" className="mt-6">
+                <DataTable data={parsedData} activeTab="students" />
+              </TabsContent>
+
+              <TabsContent value="companies" className="mt-6">
+                <DataTable data={parsedData} activeTab="companies" />
+              </TabsContent>
+
+              <TabsContent value="supervisors" className="mt-6">
+                <DataTable data={parsedData} activeTab="supervisors" />
+              </TabsContent>
+
+              <TabsContent value="raw" className="mt-6">
+                <DataTable data={parsedData} activeTab="raw" />
+              </TabsContent>
+
+              <TabsContent value="json" className="mt-6">
+                <JsonPreview data={parsedData} />
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>
     </SidebarProvider>
-
-  );
+  )
 };
 
