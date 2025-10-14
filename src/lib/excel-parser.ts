@@ -143,8 +143,8 @@ export class ExcelParser {
     const seen = new Map<string, Supervisor>()
     const unique: Supervisor[] = []
     let removed = 0
-    const countedProjects = new Map<string, Set<string>>() // supervisorId -> Set<codeProjet>
 
+    // First pass: collect all unique supervisors
     for (const supervisor of supervisors) {
       // Use prenom + categorie + annee as unique identifier
       const key = `supervisor_${supervisor.prenom.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}_${supervisor.categorie}_${supervisor.annee}`
@@ -153,37 +153,62 @@ export class ExcelParser {
         removed++
         const existing = seen.get(key)!
         
-        // Only increment nombreEtudiants if it's a new project (codeProjet)
-        const supervisorKey = existing.id
-        if (!countedProjects.has(supervisorKey)) {
-          countedProjects.set(supervisorKey, new Set())
-        }
-        
-        // Find students with this supervisor to check their projects
-        const supervisorStudents = students.filter(s => 
-          (supervisor.categorie === 'academique' && s.encadreurAcId === supervisor.id) ||
-          (supervisor.categorie === 'professionnel' && s.encadreurProId === supervisor.id)
-        )
-        
-        for (const student of supervisorStudents) {
-          const projectKey = student.codeProjet
-          if (!countedProjects.get(supervisorKey)!.has(projectKey)) {
-            existing.nombreEtudiants++
-            countedProjects.get(supervisorKey)!.add(projectKey)
-          }
-        }
-        
         // Merge other data if missing
         if (!existing.email && supervisor.email) existing.email = supervisor.email
         if (!existing.telephone && supervisor.telephone) existing.telephone = supervisor.telephone
       } else {
         // Assign auto-increment ID
         supervisor.id = `supervisor_${supervisor.categorie}_${this.supervisorIdCounter++}`
+        supervisor.nombreEtudiants = 0 // Reset to 0, we'll count properly below
         seen.set(key, supervisor)
         unique.push(supervisor)
+      }
+    }
+
+    // Second pass: count students for each supervisor based on codeProjet uniqueness
+    const countedProjects = new Map<string, Set<string>>() // supervisorId -> Set<codeProjet>
+    
+    for (const student of students) {
+      // Count academic supervisors
+      if (student.encadreurAcId) {
+        const academicSupervisor = unique.find(s => 
+          s.categorie === 'academique' && 
+          s.prenom.toLowerCase().includes(student.encadreurAcId.toLowerCase())
+        )
         
-        // Initialize counted projects for this supervisor
-        countedProjects.set(supervisor.id, new Set())
+        if (academicSupervisor) {
+          const supervisorKey = academicSupervisor.id
+          if (!countedProjects.has(supervisorKey)) {
+            countedProjects.set(supervisorKey, new Set())
+          }
+          
+          const projectKey = student.codeProjet
+          if (!countedProjects.get(supervisorKey)!.has(projectKey)) {
+            academicSupervisor.nombreEtudiants++
+            countedProjects.get(supervisorKey)!.add(projectKey)
+          }
+        }
+      }
+      
+      // Count professional supervisors
+      if (student.encadreurProId) {
+        const professionalSupervisor = unique.find(s => 
+          s.categorie === 'professionnel' && 
+          s.prenom.toLowerCase().includes(student.encadreurProId.toLowerCase())
+        )
+        
+        if (professionalSupervisor) {
+          const supervisorKey = professionalSupervisor.id
+          if (!countedProjects.has(supervisorKey)) {
+            countedProjects.set(supervisorKey, new Set())
+          }
+          
+          const projectKey = student.codeProjet
+          if (!countedProjects.get(supervisorKey)!.has(projectKey)) {
+            professionalSupervisor.nombreEtudiants++
+            countedProjects.get(supervisorKey)!.add(projectKey)
+          }
+        }
       }
     }
 
