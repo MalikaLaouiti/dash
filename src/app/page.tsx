@@ -56,7 +56,7 @@ export default function Home() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Résumé des données importées
-                    <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors} éléments</Badge>
+                    <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors.academiques +parsedData.summary.totalSupervisors.professionnels} éléments</Badge>
                   </CardTitle>
                   <CardDescription>
                     Données extraites du fichier Excel et organisées par catégorie
@@ -73,7 +73,7 @@ export default function Home() {
                       <span className="text-sm">Entreprises</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors.total}</Badge>
                       <span className="text-sm">Encadreurs</span>
                     </div>
               </div>
@@ -96,7 +96,10 @@ export default function Home() {
                   Entreprises ({parsedData?.summary.totalCompanies || 0})
                 </TabsTrigger>
                 <TabsTrigger value="supervisors">
-                  Encadreurs ({parsedData?.summary.totalSupervisors || 0})
+                  Encadreurs Academique ({parsedData?.summary.totalSupervisors.academiques || 0})
+                </TabsTrigger>
+                <TabsTrigger value="supervisors">
+                  Encadreurs Professionnel ({parsedData?.summary.totalSupervisors.professionnels || 0})
                 </TabsTrigger>
                 <TabsTrigger value="raw">
                   Vue combinée ({filteredData.length})
