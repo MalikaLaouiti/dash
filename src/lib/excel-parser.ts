@@ -1,20 +1,31 @@
 export interface Student {
-  id: string
-  nom: string
+  codeProjet: string
+  cin: number
   prenom: string
-  specialisation: string
-  annee: string
-  societe?: string
-  encadreur?: string
   email?: string
   telephone?: string
-  statut: "actif" | "diplome" | "abandonne"
+  filiere: string
+  annee: string
+  titreProjet?: string
+  score?: number
+  companyId?: string
+  localisation_type?: "interne" | "externe"
+  encadreurAcId?: string
+  encadreurProId?: string
+  dureeStage?: string
+  debutStage?: Date
+  finStage?: Date
+  collaboration: "binome" | "monome"
+  collaborateur?: Student
+  ficheInformation?: string
+  cahierCharge?: string
 }
 
 export interface Company {
   id: string
   nom: string
   secteur: string
+  encadrantPro :Supervisor[]
   adresse?: string
   contact?: string
   email?: string
@@ -23,15 +34,15 @@ export interface Company {
   annee: string
 }
 
+
 export interface Supervisor {
   id: string
-  nom: string
   prenom: string
-  specialisation: string
   email?: string
   telephone?: string
   nombreEtudiants: number
   annee: string
+  categorie: "professionnel" | "academique"
 }
 
 export interface ParsedExcelData {
@@ -42,37 +53,49 @@ export interface ParsedExcelData {
   summary: {
     totalStudents: number
     totalCompanies: number
-    totalSupervisors: number
+    totalSupervisors: {
+      academiques: number
+      professionnels: number
+      total: number
+    }
     yearsCovered: string[]
+    collaborations: {
+      binomes: number
+      monomes: number
+    }
+    localisations: {
+      internes: number
+      externes: number
+    }
   }
 }
 
 export class ExcelParser {
-  private static detectDataType(headers: string[]): "students" | "companies" | "supervisors" | "unknown" {
-    const safeHeaders = headers.filter((h) => h != null).map((h) => String(h).toLowerCase())
-    const headerStr = safeHeaders.join(" ")
+  // private static detectDataType(headers: string[]): "students" | "companies" | "supervisors" | "unknown" {
+  //   const safeHeaders = headers.filter((h) => h != null).map((h) => String(h).toLowerCase())
+  //   const headerStr = safeHeaders.join(" ")
+   
 
-    // Detect students data
-    if (
-      headerStr.includes("etudiant") ||
-      (headerStr.includes("nom") && headerStr.includes("prenom") && headerStr.includes("specialisation"))
-    ) {
-      return "students"
-    }
+  //   // Detect students data
+  //   if (
+  //     (headerStr.includes("nom") || headerStr.includes("cin") || headerStr.includes("code projet"))
+  //   ) {
+  //     return "students"
+  //   }
 
-    // Detect companies data
-    if (headerStr.includes("société") || headerStr.includes("entreprise") || headerStr.includes("Host")) {
-      return "companies"
-    }
+  //   // Detect companies data
+  //   if (headerStr.includes("société") || headerStr.includes("entreprise") || headerStr.includes("Host")) {
+  //     return "companies"
+  //   }
 
-    // Detect supervisors data
-    if (headerStr.includes("encadrant isimm") || headerStr.includes("Academic Supervisor") || headerStr.includes("professeur")) {
-      return "supervisors"
-    }
+  //   // Detect supervisors data
+  //   if (headerStr.includes("encadrant isimm") || headerStr.includes("Academic Supervisor") || headerStr.includes("professeur")) {
+  //     return "supervisors"
+  //   }
 
-    return "unknown"
-  }
-
+  //   return "unknown"
+  // }
+  
   private static parseStudents(data: any[][], year: string): Student[] {
     if (data.length < 2) return []
 
@@ -81,14 +104,16 @@ export class ExcelParser {
 
     // Find column indices with safe string operations
     const indices = {
-      nom: headers.findIndex((h) => h && h.includes("nom") && !h.includes("prenom")),
+      codeProject: headers.findIndex((h) => h && (h.includes("code projet"))),
+      cin: headers.findIndex((h) => h && h.includes("cin")),
+      nom: headers.findIndex((h) => h && h.includes("nom")),
       prenom: headers.findIndex((h) => h && h.includes("prenom")),
-      specialisation: headers.findIndex((h) => h && (h.includes("specialisation") || h.includes("filiere"))),
-      societe: headers.findIndex((h) => h && (h.includes("societe") || h.includes("entreprise"))),
-      encadreur: headers.findIndex((h) => h && (h.includes("encadreur") || h.includes("superviseur"))),
+      specialisation: headers.findIndex((h) => h && (h.includes("specialisation") || h.includes("filiére"))),
+      societe: headers.findIndex((h) => h && (h.includes("société") || h.includes("entreprise"))),
+      encadreur: headers.findIndex((h) => h && (h.includes("Encadrant ISIMM") )),
       email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("telephone") || h.includes("tel"))),
-      statut: headers.findIndex((h) => h && (h.includes("statut") || h.includes("status"))),
+      telephone: headers.findIndex((h) => h && (h.includes("téléphone") || h.includes("phone number"))),
+      score: headers.findIndex((h) => h && (h.includes("score") || h.includes("note"))),
     }
 
     for (let i = 1; i < data.length; i++) {
@@ -97,6 +122,8 @@ export class ExcelParser {
 
       const student: Student = {
         id: `student_${year}_${i}`,
+        codeProjet: indices.codeProject >= 0 ? String(row[indices.codeProject]) : "",
+        cin: indices.cin >= 0 ? Number(row[indices.cin]) || 0 : 0,
         nom: row[indices.nom] || "",
         prenom: row[indices.prenom] || "",
         specialisation: row[indices.specialisation] || "",
@@ -105,7 +132,7 @@ export class ExcelParser {
         encadreur: indices.encadreur >= 0 ? row[indices.encadreur] : undefined,
         email: indices.email >= 0 ? row[indices.email] : undefined,
         telephone: indices.telephone >= 0 ? row[indices.telephone] : undefined,
-        statut: indices.statut >= 0 ? row[indices.statut] || "actif" : "actif",
+        score: indices.score >= 0 ? row[indices.score] : undefined,
       }
 
       if (student.nom || student.prenom) {
@@ -217,6 +244,7 @@ export class ExcelParser {
 
     // Process each sheet
     Object.entries(rawExcelData.sheets).forEach(([sheetName, sheetData]: [string, any]) => {
+    
       if (!Array.isArray(sheetData) || sheetData.length === 0) return
 
       // Extract year from sheet name (e.g., "2024", "Etudiants_2023", etc.)
@@ -226,24 +254,28 @@ export class ExcelParser {
 
       // Detect data type from headers with safety checks
       const headers = (sheetData[0] || []).filter((h: null) => h != null)
-      const dataType = this.detectDataType(headers)
+      // const dataType = this.detectDataType(headers)
 
-      switch (dataType) {
-        case "students":
-          students.push(...this.parseStudents(sheetData, year))
-          break
-        case "companies":
-          companies.push(...this.parseCompanies(sheetData, year))
-          break
-        case "supervisors":
-          supervisors.push(...this.parseSupervisors(sheetData, year))
-          break
-        default:
-          // Try to parse as students by default if structure matches
-          if (headers.some((h: any) => h != null && String(h).toLowerCase().includes("nom"))) {
-            students.push(...this.parseStudents(sheetData, year))
-          }
-      }
+      students.push(...this.parseStudents(sheetData, year))
+      companies.push(...this.parseCompanies(sheetData, year))
+      supervisors.push(...this.parseSupervisors(sheetData, year))
+
+      // switch (dataType) {
+      //   case "students":
+      //     students.push(...this.parseStudents(sheetData, year))
+      //     break
+      //   case "companies":
+      //     companies.push(...this.parseCompanies(sheetData, year))
+      //     break
+      //   case "supervisors":
+      //     supervisors.push(...this.parseSupervisors(sheetData, year))
+      //     break
+      //   default:
+      //     // Try to parse as students by default if structure matches
+      //     if (headers.some((h: any) => h != null && String(h).toLowerCase().includes("nom"))) {
+      //       students.push(...this.parseStudents(sheetData, year))
+      //     }
+      // }
     })
 
     return {
