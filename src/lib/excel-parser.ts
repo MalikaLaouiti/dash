@@ -76,62 +76,177 @@ export interface ParsedExcelData {
 }
 
 export class ExcelParser {
-  // Global counters for auto-increment IDs
+  // // Global counters for auto-increment IDs
+  // private static companyIdCounter = 1
+  // private static supervisorIdCounter = 1
+
+  // // Helper method to generate unique IDs
+  // private static generateUniqueId(type: string, identifier: string, year: string): string {
+  //   return `${type}_${year}_${identifier.replace(/[^a-zA-Z0-9]/g, '_')}`
+  // }
+
+  // // Helper method to check if supervisor exists in company's encadrantPro list
+  // private static supervisorExistsInCompany(company: Company, supervisorPrenom: string): boolean {
+  //   return company.encadrantPro.some(enc => enc.prenom.toLowerCase() === supervisorPrenom.toLowerCase())
+  // }
+
+  // // Helper method to check if student project was already counted for supervisor
+  // private static isProjectAlreadyCounted(supervisor: Supervisor, codeProjet: string): boolean {
+  //   // We'll track this in a separate field or use the existing logic
+  //   // For now, we'll assume each supervisor tracks their projects differently
+  //   return false // This will be enhanced based on your specific needs
+  // }
+
+  // // Smart deduplication methods based on your requirements
+  // private static deduplicateCompanies(companies: Company[]): { companies: Company[], removed: number } {
+  //   const seen = new Map<string, Company>()
+  //   const unique: Company[] = []
+  //   let removed = 0
+
+  //   for (const company of companies) {
+  //    const key = company.nom.toLowerCase().trim()
+      
+  //     if (seen.has(key)) {
+  //       removed++
+  //       const existing = seen.get(key)!
+        
+  //       // Merge encadrantPro arrays - only add if not already exists
+  //       for (const newEncadrant of company.encadrantPro) {
+  //         if (!this.supervisorExistsInCompany(existing, newEncadrant.prenom)) {
+  //           existing.encadrantPro.push({
+  //             ...newEncadrant,
+  //             id: `supervisor_pro_${this.supervisorIdCounter++}`
+  //           })
+  //         }
+  //       }
+        
+  //       // Merge other data if missing
+  //       if (!existing.secteur && company.secteur) existing.secteur = company.secteur
+  //       if (!existing.adresse && company.adresse) existing.adresse = company.adresse
+  //       if (!existing.contact && company.contact) existing.contact = company.contact
+  //       if (!existing.email && company.email) existing.email = company.email
+  //       if (!existing.telephone && company.telephone) existing.telephone = company.telephone
+  //       company.nombreStagiaires = 0
+        
+  //     } else {
+  //       // Assign auto-increment ID
+  //       company.id = `company_${this.companyIdCounter++}`
+  //       seen.set(key, company)
+  //       unique.push(company)
+  //     }
+  //   }
+
+  //   return { companies: unique, removed }
+  // }
+
+  // private static deduplicateSupervisors(supervisors: Supervisor[], students: Student[]): { supervisors: Supervisor[] ,removed: number }
+  // {
+  //   const seen = new Map<string, Supervisor>()
+  //   const unique: Supervisor[] = []
+  //   let removed = 0
+
+  //   // Phase 1: Collecter les superviseurs uniques
+  //   for (const supervisor of supervisors) {
+  //     if (!supervisor.prenom || supervisor.prenom.trim() === '') continue
+
+  //     // Clé unique: prenom + categorie (sans année)
+  //     const normalizedPrenom = supervisor.prenom.toLowerCase().trim().replace(/\s+/g, ' ')
+  //     const key = `${normalizedPrenom}_${supervisor.categorie}`
+      
+  //     if (seen.has(key)) {
+  //       removed++
+  //       const existing = seen.get(key)!
+        
+  //       // Enrichir les données manquantes
+  //       if (!existing.email && supervisor.email) existing.email = supervisor.email
+  //       if (!existing.telephone && supervisor.telephone) existing.telephone = supervisor.telephone
+  //     } else {
+  //       // Nouveau superviseur
+  //       const idCounter = supervisor.categorie === 'academique' 
+  //         ? this.supervisorAcademiqueIdCounter++ 
+  //         : this.supervisorProfessionnelIdCounter++
+        
+  //       supervisor.id = `supervisor_${supervisor.categorie}_${idCounter}`
+  //       supervisor.nombreEtudiants = 0 // Reset, sera calculé plus tard
+  //       supervisor.prenom = normalizedPrenom
+        
+  //       seen.set(key, supervisor)
+  //       unique.push(supervisor)
+  //     }
+  //   }
+
+  //   // Phase 2: Compter les étudiants par codeProjet unique
+  //   this.countStudentsForSupervisors(unique, students)
+
+  //   return { supervisors: unique, removed }
+  // }
+
+   // Global counters for auto-increment IDs
   private static companyIdCounter = 1
-  private static supervisorIdCounter = 1
+  private static supervisorAcademiqueIdCounter = 1
+  private static supervisorProfessionnelIdCounter = 1
 
-  // Helper method to generate unique IDs
-  private static generateUniqueId(type: string, identifier: string, year: string): string {
-    return `${type}_${year}_${identifier.replace(/[^a-zA-Z0-9]/g, '_')}`
-  }
-
-  // Helper method to check if supervisor exists in company's encadrantPro list
-  private static supervisorExistsInCompany(company: Company, supervisorPrenom: string): boolean {
-    return company.encadrantPro.some(enc => enc.prenom.toLowerCase() === supervisorPrenom.toLowerCase())
-  }
-
-  // Helper method to check if student project was already counted for supervisor
-  private static isProjectAlreadyCounted(supervisor: Supervisor, codeProjet: string): boolean {
-    // We'll track this in a separate field or use the existing logic
-    // For now, we'll assume each supervisor tracks their projects differently
-    return false // This will be enhanced based on your specific needs
-  }
-
-  // Smart deduplication methods based on your requirements
-  private static deduplicateCompanies(companies: Company[]): { companies: Company[], removed: number } {
+  /**
+   * CORRECTION 1: Déduplication des sociétés
+   * Critère: nom uniquement (pas d'année)
+   * Fusionne les encadrants sans doublons
+   */
+  private static deduplicateCompanies(companies: Company[]): { 
+    companies: Company[]
+    removed: number 
+  } {
     const seen = new Map<string, Company>()
     const unique: Company[] = []
     let removed = 0
 
     for (const company of companies) {
-      // Use nom + annee as unique identifier
-      const key = `company_${company.nom.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}_${company.annee}`
+      if (!company.nom || company.nom.trim() === '') continue
+
+      // Clé unique: nom normalisé (sans année)
+      const normalizedNom = company.nom.toLowerCase().trim().replace(/\s+/g, ' ')
       
-      if (seen.has(key)) {
+      if (seen.has(normalizedNom)) {
         removed++
-        const existing = seen.get(key)!
+        const existing = seen.get(normalizedNom)!
         
-        // Merge encadrantPro arrays - only add if not already exists
+        // Fusionner les encadrants professionnels (éviter doublons)
         for (const newEncadrant of company.encadrantPro) {
-          if (!this.supervisorExistsInCompany(existing, newEncadrant.prenom)) {
+          if (!newEncadrant.prenom || newEncadrant.prenom.trim() === '') continue
+          
+          const normalizedPrenom = newEncadrant.prenom.toLowerCase().trim()
+          const encadrantExists = existing.encadrantPro.some(
+            enc => enc.prenom.toLowerCase().trim() === normalizedPrenom
+          )
+          
+          if (!encadrantExists) {
             existing.encadrantPro.push({
               ...newEncadrant,
-              id: `supervisor_pro_${this.supervisorIdCounter++}`
+              id: `supervisor_pro_${this.supervisorProfessionnelIdCounter++}`
             })
           }
         }
         
-        // Merge other data if missing
+        // Enrichir les données manquantes (ne pas écraser)
         if (!existing.secteur && company.secteur) existing.secteur = company.secteur
         if (!existing.adresse && company.adresse) existing.adresse = company.adresse
         if (!existing.contact && company.contact) existing.contact = company.contact
         if (!existing.email && company.email) existing.email = company.email
         if (!existing.telephone && company.telephone) existing.telephone = company.telephone
-        existing.nombreStagiaires += company.nombreStagiaires
+        
+        // NE PAS additionner nombreStagiaires ici (sera calculé plus tard)
       } else {
-        // Assign auto-increment ID
+        // Nouvelle société
         company.id = `company_${this.companyIdCounter++}`
-        seen.set(key, company)
+        company.nombreStagiaires = 0 // Reset, sera calculé plus tard
+        
+        // Assigner IDs aux encadrants
+        company.encadrantPro = company.encadrantPro.map(enc => ({
+          ...enc,
+          id: `supervisor_pro_${this.supervisorProfessionnelIdCounter++}`,
+          nombreEtudiants: 0 // Reset, sera calculé plus tard
+        }))
+        
+        seen.set(normalizedNom, company)
         unique.push(company)
       }
     }
@@ -139,81 +254,194 @@ export class ExcelParser {
     return { companies: unique, removed }
   }
 
-  private static deduplicateSupervisors(supervisors: Supervisor[], students: Student[]): { supervisors: Supervisor[], removed: number } {
+  /**
+   * CORRECTION 2: Déduplication des superviseurs
+   * Critère: prenom + categorie uniquement (pas d'année)
+   * Compte les étudiants par codeProjet unique
+   */
+  private static deduplicateSupervisors(
+    supervisors: Supervisor[], 
+    students: Student[]
+  ): { 
+    supervisors: Supervisor[]
+    removed: number 
+  } {
     const seen = new Map<string, Supervisor>()
     const unique: Supervisor[] = []
     let removed = 0
 
-    // First pass: collect all unique supervisors
+    // Phase 1: Collecter les superviseurs uniques
     for (const supervisor of supervisors) {
-      // Use prenom + categorie + annee as unique identifier
-      const key = `supervisor_${supervisor.prenom.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}_${supervisor.categorie}_${supervisor.annee}`
+      if (!supervisor.prenom || supervisor.prenom.trim() === '') continue
+
+      // Clé unique: prenom + categorie (sans année)
+      const normalizedPrenom = supervisor.prenom.toLowerCase().trim().replace(/\s+/g, ' ')
+      const key = `${normalizedPrenom}_${supervisor.categorie}`
       
       if (seen.has(key)) {
         removed++
         const existing = seen.get(key)!
         
-        // Merge other data if missing
+        // Enrichir les données manquantes
         if (!existing.email && supervisor.email) existing.email = supervisor.email
         if (!existing.telephone && supervisor.telephone) existing.telephone = supervisor.telephone
       } else {
-        // Assign auto-increment ID
-        supervisor.id = `supervisor_${supervisor.categorie}_${this.supervisorIdCounter++}`
-        supervisor.nombreEtudiants = 0 // Reset to 0, we'll count properly below
+        // Nouveau superviseur
+        const idCounter = supervisor.categorie === 'academique' 
+          ? this.supervisorAcademiqueIdCounter++ 
+          : this.supervisorProfessionnelIdCounter++
+        
+        supervisor.id = `supervisor_${supervisor.categorie}_${idCounter}`
+        supervisor.nombreEtudiants = 0 // Reset, sera calculé plus tard
+        supervisor.prenom = normalizedPrenom
+        
         seen.set(key, supervisor)
         unique.push(supervisor)
       }
     }
 
-    // Second pass: count students for each supervisor based on codeProjet uniqueness
-    const countedProjects = new Map<string, Set<string>>() // supervisorId -> Set<codeProjet>
-    
+    // Phase 2: Compter les étudiants par codeProjet unique
+    this.countStudentsForSupervisors(unique, students)
+
+    return { supervisors: unique, removed }
+  }
+
+  /**
+   * CORRECTION 3: Compter les étudiants correctement
+   * Un même codeProjet ne doit être compté qu'une seule fois par superviseur
+   */
+  private static countStudentsForSupervisors(
+    supervisors: Supervisor[],
+    students: Student[]
+  ): void {
+    // Map: supervisorId -> Set<codeProjet>
+    const projectsBySupervisor = new Map<string, Set<string>>()
+
     for (const student of students) {
-      // Count academic supervisors
-      if (student.encadreurAcId) {
-        const academicSupervisor = unique.find(s => 
+      if (!student.codeProjet || student.codeProjet.trim() === '') continue
+
+      // Compter pour encadrant académique
+      if (student.encadreurAcId && student.encadreurAcId.trim() !== '') {
+        const normalizedName = student.encadreurAcId.toLowerCase().trim().replace(/\s+/g, ' ')
+        const academicSupervisor = supervisors.find(s => 
           s.categorie === 'academique' && 
-          s.prenom.toLowerCase().includes(student.encadreurAcId.toLowerCase())
+          s.prenom.toLowerCase() === normalizedName
         )
         
         if (academicSupervisor) {
-          const supervisorKey = academicSupervisor.id
-          if (!countedProjects.has(supervisorKey)) {
-            countedProjects.set(supervisorKey, new Set())
+          if (!projectsBySupervisor.has(academicSupervisor.id)) {
+            projectsBySupervisor.set(academicSupervisor.id, new Set())
           }
           
-          const projectKey = student.codeProjet
-          if (!countedProjects.get(supervisorKey)!.has(projectKey)) {
+          const projects = projectsBySupervisor.get(academicSupervisor.id)!
+          if (!projects.has(student.codeProjet)) {
+            projects.add(student.codeProjet)
             academicSupervisor.nombreEtudiants++
-            countedProjects.get(supervisorKey)!.add(projectKey)
           }
         }
       }
       
-      // Count professional supervisors
-      if (student.encadreurProId) {
-        const professionalSupervisor = unique.find(s => 
+      // Compter pour encadrant professionnel
+      if (student.encadreurProId && student.encadreurProId.trim() !== '') {
+        const normalizedName = student.encadreurProId.toLowerCase().trim().replace(/\s+/g, ' ')
+        const professionalSupervisor = supervisors.find(s => 
           s.categorie === 'professionnel' && 
-          s.prenom.toLowerCase().includes(student.encadreurProId.toLowerCase())
+          s.prenom.toLowerCase() === normalizedName
         )
         
         if (professionalSupervisor) {
-          const supervisorKey = professionalSupervisor.id
-          if (!countedProjects.has(supervisorKey)) {
-            countedProjects.set(supervisorKey, new Set())
+          if (!projectsBySupervisor.has(professionalSupervisor.id)) {
+            projectsBySupervisor.set(professionalSupervisor.id, new Set())
           }
           
-          const projectKey = student.codeProjet
-          if (!countedProjects.get(supervisorKey)!.has(projectKey)) {
+          const projects = projectsBySupervisor.get(professionalSupervisor.id)!
+          if (!projects.has(student.codeProjet)) {
+            projects.add(student.codeProjet)
             professionalSupervisor.nombreEtudiants++
-            countedProjects.get(supervisorKey)!.add(projectKey)
           }
         }
       }
     }
-
-    return { supervisors: unique, removed }
   }
+
+  /**
+   * CORRECTION 4: Compter les stagiaires par société
+   * Basé sur les étudiants qui ont cette société
+   */
+  private static countInternsBySociety(
+    companies: Company[],
+    students: Student[]
+  ): void {
+    for (const company of companies) {
+      const normalizedNom = company.nom.toLowerCase().trim().replace(/\s+/g, ' ')
+      
+      company.nombreStagiaires = students.filter(student => {
+        if (!student.companyId) return false
+        const studentCompany = student.companyId.toLowerCase().trim().replace(/\s+/g, ' ')
+        return studentCompany === normalizedNom
+      }).length
+    }
+  }
+
+  /**
+   * CORRECTION 5: Déduplication des étudiants
+   * Critère: CIN unique
+   */
+  private static deduplicateStudents(students: Student[]): {
+    students: Student[]
+    removed: number
+  } {
+    const seen = new Map<string, Student>()
+    const unique: Student[] = []
+    let removed = 0
+
+    for (const student of students) {
+      if (!student.cin || student.cin.toString().trim() === '') continue
+
+      const normalizedCIN = student.cin.toString().trim()
+      
+      if (seen.has(normalizedCIN)) {
+        removed++
+        // Garder celui avec le plus de données
+        const existing = seen.get(normalizedCIN)!
+        const currentScore = this.calculateCompletenessScore(student)
+        const existingScore = this.calculateCompletenessScore(existing)
+        
+        if (currentScore > existingScore) {
+          seen.set(normalizedCIN, student)
+          const index = unique.findIndex(s => String(s.cin) === normalizedCIN)
+          if (index !== -1) {
+            unique[index] = student
+          }
+        }
+      } else {
+        student.cin = Number(normalizedCIN)
+        seen.set(normalizedCIN, student)
+        unique.push(student)
+      }
+    }
+
+    return { students: unique, removed }
+  }
+
+  /**
+   * Calcule le score de complétude d'un étudiant
+   */
+  private static calculateCompletenessScore(student: Student): number {
+    let score = 0
+    const fields = [
+      'email', 'telephone', 'titreProjet', 'score', 'companyId',
+      'encadreurAcId', 'encadreurProId', 'debutStage', 'finStage',
+      'ficheInformation', 'cahierCharge'
+    ]
+    
+    fields.forEach(field => {
+      if ((student as any)[field]) score++
+    })
+    
+    return score
+  }
+
 
   // private static detectDataType(headers: string[]): "students" | "companies" | "supervisors" | "unknown" {
   //   const safeHeaders = headers.filter((h) => h != null).map((h) => String(h).toLowerCase())
@@ -321,9 +549,9 @@ export class ExcelParser {
     const companies: Company[] = []
 
     const indices = {
-      nom: headers.findIndex((h) => h && (h.includes("nom") || h.includes("societe") || h.includes("entreprise") || h.includes("company"))),
+      nom: headers.findIndex((h) => h && ( h.includes("société") )),
       secteur: headers.findIndex((h) => h && (h.includes("secteur") || h.includes("domaine") || h.includes("sector"))),
-      adresse: headers.findIndex((h) => h && (h.includes("adresse") || h.includes("address"))),
+      adresse: headers.findIndex((h) => h && (h.includes("adresse de société") || h.includes("address"))),
       contact: headers.findIndex((h) => h && h.includes("contact") && !h.includes("email")),
       email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
       telephone: headers.findIndex((h) => h && (h.includes("telephone") || h.includes("tel") || h.includes("phone"))),
