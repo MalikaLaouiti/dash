@@ -473,28 +473,28 @@ export class ExcelParser {
 
     const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
     const students: Student[] = []
-
+    console.log("Parsing headers:", headers)
     // Find column indices with safe string operations
     const indices = {
       codeProject: headers.findIndex((h) => h && (h.includes("code projet") || h.includes("code"))),
       cin: headers.findIndex((h) => h && h.includes("cin")),
       prenom: headers.findIndex((h) => h && h.includes("prenom")),
-      filiere: headers.findIndex((h) => h && (h.includes("filiere") || h.includes("specialisation") || h.includes("filiére"))),
+      filiere: headers.findIndex((h) => h && (h.includes("filiére") || h.includes("specialisation") || h.includes("filiére"))),
       email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("téléphone") || h.includes("phone number") || h.includes("tel"))),
-      titreProjet: headers.findIndex((h) => h && (h.includes("titre") || h.includes("projet") || h.includes("sujet"))),
+      telephone: headers.findIndex((h) => h && (h.includes("téléphone") || h.includes("phone number") )),
+      titreProjet: headers.findIndex((h) => h && (h.includes("titre du sujet") || h.includes("projet") || h.includes("sujet"))),
       score: headers.findIndex((h) => h && (h.includes("score") || h.includes("note"))),
-      companyId: headers.findIndex((h) => h && (h.includes("company") || h.includes("entreprise") || h.includes("société"))),
-      localisationType: headers.findIndex((h) => h && (h.includes("localisation") || h.includes("type") || h.includes("interne/externe"))),
+      companyId: headers.findIndex((h) => h && (h.includes("société") || h.includes("entreprise") || h.includes("company"))),
+      localisationType: headers.findIndex((h) => h && (h.includes("type")  || h.includes("interne/externe"))),
       encadreurAc: headers.findIndex((h) => h && (h.includes("encadrant isimm") || h.includes("academic supervisor") || h.includes("professeur"))),
       encadreurPro: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("professional supervisor"))),
-      dureeStage: headers.findIndex((h) => h && (h.includes("durée") || h.includes("duree") || h.includes("duration"))),
+      dureeStage: headers.findIndex((h) => h && (h.includes("durée stage") || h.includes("duree") || h.includes("duration"))),
       debutStage: headers.findIndex((h) => h && (h.includes("début stage") || h.includes("debut") || h.includes("start"))),
       finStage: headers.findIndex((h) => h && (h.includes("fin stage") || h.includes("end"))),
-      collaboration: headers.findIndex((h) => h && (h.includes("collaboration") || h.includes("binome") || h.includes("monome"))),
-      collaborateur: headers.findIndex((h) => h && (h.includes("collaborateur") || h.includes("partner"))),
-      ficheInformation: headers.findIndex((h) => h && (h.includes("fiche") || h.includes("information"))),
-      cahierCharge: headers.findIndex((h) => h && (h.includes("cahier") || h.includes("charge"))),
+      collaboration: headers.findIndex((h) => h && (h.includes("group type") || h.includes("binome") || h.includes("monome"))),
+      collaborateur: headers.findIndex((h) => h && (h.includes("collaborateur") || h.includes("deuxième étudiant"))),
+      ficheInformation: headers.findIndex((h) => h && (h.includes("fiche") || h.includes("fiche d'informations scannée"))),
+      cahierCharge: headers.findIndex((h) => h && (h.includes("cahier charges") || h.includes("charge"))),
     }
 
     for (let i = 1; i < data.length; i++) {
@@ -550,13 +550,13 @@ export class ExcelParser {
 
     const indices = {
       nom: headers.findIndex((h) => h && ( h.includes("société") )),
-      secteur: headers.findIndex((h) => h && (h.includes("secteur") || h.includes("domaine") || h.includes("sector"))),
+      secteur: headers.findIndex((h) => h && (h.includes("domaine d'activités") || h.includes("secteur") || h.includes("sector"))),
       adresse: headers.findIndex((h) => h && (h.includes("adresse de société") || h.includes("address"))),
-      contact: headers.findIndex((h) => h && h.includes("contact") && !h.includes("email")),
+      contact: headers.findIndex((h) => h && h.includes("e-mail encadrant professionnel") || h.includes("contact")),
       email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("telephone") || h.includes("tel") || h.includes("phone"))),
-      stagiaires: headers.findIndex((h) => h && (h.includes("stagiaire") || h.includes("etudiant") || h.includes("student"))),
+      telephone: headers.findIndex((h) => h && (h.includes("phone number encadrant professionnel") || h.includes("telephone") || h.includes("phone"))),
       encadrantPro: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("professional supervisor"))),
+      stagiaires: headers.findIndex((h) => h && (h.includes("nombre de stagiaires") || h.includes("number of interns"))),
     }
 
     for (let i = 1; i < data.length; i++) {
@@ -599,9 +599,9 @@ export class ExcelParser {
     const supervisors: Supervisor[] = []
 
     const indices = {
-      prenom: headers.findIndex((h) => h && (h.includes("prenom") || h.includes("nom"))),
-      email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("telephone") || h.includes("tel") || h.includes("phone"))),
+      prenom: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("encadrant isimm"))),
+      email: headers.findIndex((h) => h && (h.includes("email *") || h.includes("mail *"))),
+      telephone: headers.findIndex((h) => h && (h.includes("phone number *") || h.includes("telephone") || h.includes("tel") )),
       etudiants: headers.findIndex((h) => h && (h.includes("etudiant") || h.includes("nombre") || h.includes("student"))),
       categorie: headers.findIndex((h) => h && (h.includes("categorie") || h.includes("type") || h.includes("academic") || h.includes("professional"))),
     }
