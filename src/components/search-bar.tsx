@@ -73,7 +73,7 @@ export function SearchBar({ query, onQueryChange, filters, onFiltersChange }: Se
   }
 
   return (
-    <div className="space-y-3 p-6">
+    <div className="space-y-3 p-4 w-full">
       <div className="flex items-center gap-4">
         {/* Search Input */}
         <div className="relative flex-1">
@@ -117,7 +117,7 @@ export function SearchBar({ query, onQueryChange, filters, onFiltersChange }: Se
         {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent relative">
+            <Button variant="outline" size="sm" className="gap-2 bg-transparent relative h-9">
               <Filter className="h-4 w-4" />
               Filtres
               {getActiveFiltersCount() > 0 && (

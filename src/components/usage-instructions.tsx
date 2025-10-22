@@ -19,7 +19,7 @@ export function UsageInstructions() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-medium mb-2">1. Format du fichier Excel</h4>
+            <h4 className="font-medium mb-2">Format du fichier Excel</h4>
             <p className="text-sm text-muted-foreground mb-2">
               Votre fichier Excel doit contenir des feuilles avec les colonnes suivantes :
             </p>
@@ -53,7 +53,6 @@ export function UsageInstructions() {
                   <div>• Contact (optionnel)</div>
                   <div>• Email (optionnel)</div>
                   <div>• Téléphone (optionnel)</div>
-                  <div>• Nombre stagiaires</div>
                 </div>
               </div>
               
@@ -68,13 +67,12 @@ export function UsageInstructions() {
                   <div>• Spécialisation</div>
                   <div>• Email (optionnel)</div>
                   <div>• Téléphone (optionnel)</div>
-                  <div>• Nombre étudiants</div>
                 </div>
               </div>
             </div>
           </div>
           
-          <div>
+          {/* <div>
             <h4 className="font-medium mb-2">2. Fonctionnalités</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -103,9 +101,9 @@ export function UsageInstructions() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
           
-          <div>
+          {/* <div>
             <h4 className="font-medium mb-2">3. Fichiers d'exemple</h4>
             <p className="text-sm text-muted-foreground mb-2">
               Des fichiers d'exemple sont disponibles dans le dossier public pour tester l'application :
@@ -115,9 +113,9 @@ export function UsageInstructions() {
               <Badge variant="secondary">exemple-donnees-entreprises.csv</Badge>
               <Badge variant="secondary">exemple-donnees-encadreurs.csv</Badge>
             </div>
-          </div>
+          </div> */}
           
-          <div>
+          {/* <div>
             <h4 className="font-medium mb-2">4. Structure JSON générée</h4>
             <p className="text-sm text-muted-foreground mb-2">
               Le JSON généré contient :
@@ -131,7 +129,7 @@ export function UsageInstructions() {
             <p className="text-xs text-muted-foreground mt-2">
               Cette structure est optimisée pour l'utilisation avec MongoDB et Mongoose.
             </p>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

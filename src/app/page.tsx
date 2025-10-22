@@ -2,7 +2,6 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { HeaderBar } from '@/components/header-bar';
 import { SearchBar } from "@/components/search-bar";
 import { ExcelUploader } from "@/components/excel-uploader";
 import { DataTable } from "@/components/data-table";
@@ -36,16 +35,19 @@ export default function Home() {
         <AppSidebar />
         <main className="flex-1 flex flex-col overflow-hidden">
           <SidebarTrigger />
-          <HeaderBar />
           
-          <div className="flex items-center gap-4 p-4 border-b">
+          <div className="flex items-center justify-between mb-4 p-6 border-b border-border">
+            <h1 className="text-2xl font-bold text-foreground gap-2">Dashboard d&apos;Analyse Académique</h1>
             <ExcelUploader onDataLoad={handleDataLoad} />
-          <SearchBar
-            query={searchQuery}
-            onQueryChange={setSearchQuery}
-            filters={searchFilters}
-            onFiltersChange={setSearchFilters}
-          />
+          </div>
+          
+          <div className="flex items-center gap-2 p-2 border-b "> 
+            <SearchBar 
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              filters={searchFilters}
+              onFiltersChange={setSearchFilters}
+            />
           </div>
 
           <div className="flex-1 overflow-auto p-4 space-y-6">
