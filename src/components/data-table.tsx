@@ -15,7 +15,7 @@ import { Calendar } from "lucide-react"
 
 interface DataTableProps {
   data: ParsedExcelData | null
-  activeTab: "students" | "companies" | "supervisors" | "raw"
+  activeTab: "students" | "companies" | "supervisors" | "supervisors-academic" | "supervisors-professional" | "raw"
 }
 
 export function DataTable({ data, activeTab }: DataTableProps) {
@@ -28,7 +28,7 @@ export function DataTable({ data, activeTab }: DataTableProps) {
   }
 
   const renderStudentRow = (student: Student) => (
-    <TableRow key={student.codeProjet}>
+    <TableRow key={student.cin+student.annee+student.codeProjet}>
       <TableCell>{student.codeProjet}</TableCell>
       <TableCell className="font-medium">{student.prenom}</TableCell>
       <TableCell>{student.cin}</TableCell>
@@ -189,6 +189,62 @@ export function DataTable({ data, activeTab }: DataTableProps) {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
                     Aucun encadreur trouvé
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </>
+        )
+
+      case "supervisors-academic":
+        return (
+          <>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Catégorie</TableHead>
+                <TableHead>Année</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Étudiants</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.supervisors.filter(s => s.categorie === "academique").length > 0 ? (
+                data.supervisors.filter(s => s.categorie === "academique").map(renderSupervisorRow)
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    Aucun encadreur académique trouvé
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </>
+        )
+
+      case "supervisors-professional":
+        return (
+          <>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Catégorie</TableHead>
+                <TableHead>Année</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Étudiants</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.supervisors.filter(s => s.categorie === "professionnel").length > 0 ? (
+                data.supervisors.filter(s => s.categorie === "professionnel").map(renderSupervisorRow)
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    Aucun encadreur professionnel trouvé
                   </TableCell>
                 </TableRow>
               )}

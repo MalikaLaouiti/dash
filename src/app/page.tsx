@@ -21,7 +21,7 @@ export default function Home() {
     supervisors: true,
   })
   const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
-  const [activeTab, setActiveTab] = useState<"students" | "companies" | "supervisors" | "raw">("students");
+  const [activeTab, setActiveTab] = useState<"students" | "companies" | "supervisors-academic" | "supervisors-professional" | "raw">("students");
 
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
@@ -90,18 +90,18 @@ export default function Home() {
             )}
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="students">
                   Étudiants ({parsedData?.summary.totalStudents || 0})
                 </TabsTrigger>
                 <TabsTrigger value="companies">
                   Entreprises ({parsedData?.summary.totalCompanies || 0})
                 </TabsTrigger>
-                <TabsTrigger value="supervisors">
-                  Encadreurs Academique ({parsedData?.summary.totalSupervisors.academiques || 0})
+                <TabsTrigger value="supervisors-academic">
+                  Encadreurs Académiques ({parsedData?.summary.totalSupervisors.academiques || 0})
                 </TabsTrigger>
-                <TabsTrigger value="supervisors">
-                  Encadreurs Professionnel ({parsedData?.summary.totalSupervisors.professionnels || 0})
+                <TabsTrigger value="supervisors-professional">
+                  Encadreurs Professionnels ({parsedData?.summary.totalSupervisors.professionnels || 0})
                 </TabsTrigger>
                 <TabsTrigger value="raw">
                   Vue combinée ({filteredData.length})
@@ -119,8 +119,12 @@ export default function Home() {
                 <DataTable data={parsedData} activeTab="companies" />
               </TabsContent>
 
-              <TabsContent value="supervisors" className="mt-6">
-                <DataTable data={parsedData} activeTab="supervisors" />
+              <TabsContent value="supervisors-academic" className="mt-6">
+                <DataTable data={parsedData} activeTab="supervisors-academic" />
+              </TabsContent>
+
+              <TabsContent value="supervisors-professional" className="mt-6">
+                <DataTable data={parsedData} activeTab="supervisors-professional" />
               </TabsContent>
 
               <TabsContent value="raw" className="mt-6">

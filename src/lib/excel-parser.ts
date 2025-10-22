@@ -442,31 +442,6 @@ export class ExcelParser {
     return score
   }
 
-
-  // private static detectDataType(headers: string[]): "students" | "companies" | "supervisors" | "unknown" {
-  //   const safeHeaders = headers.filter((h) => h != null).map((h) => String(h).toLowerCase())
-  //   const headerStr = safeHeaders.join(" ")
-   
-
-  //   // Detect students data
-  //   if (
-  //     (headerStr.includes("nom") || headerStr.includes("cin") || headerStr.includes("code projet"))
-  //   ) {
-  //     return "students"
-  //   }
-
-  //   // Detect companies data
-  //   if (headerStr.includes("société") || headerStr.includes("entreprise") || headerStr.includes("Host")) {
-  //     return "companies"
-  //   }
-
-  //   // Detect supervisors data
-  //   if (headerStr.includes("encadrant isimm") || headerStr.includes("Academic Supervisor") || headerStr.includes("professeur")) {
-  //     return "supervisors"
-  //   }
-
-  //   return "unknown"
-  // }
   
   private static parseStudents(data: any[][], year: string): Student[] {
     if (data.length < 2) return []
@@ -612,19 +587,21 @@ export class ExcelParser {
 
       // Determine category based on column headers or content
       let categorie: "professionnel" | "academique" = "academique"
-      if (indices.categorie >= 0) {
-        const categorieValue = String(row[indices.categorie] || "").toLowerCase()
-        console.log("Categorie value:", categorieValue)
-        if (categorieValue.includes("professionnel") || categorieValue.includes("professional")) {
-          categorie = "professionnel"
-        }
+      const headerContext = headers.join(" ")
+      
+      // Debug log pour voir le contexte des en-têtes
+      console.log("Header context for supervisors:", headerContext);
+      
+      if (headerContext.includes("encadrant professionnel") || headerContext.includes("professional")) {
+        categorie = "professionnel"
+        console.log("Détecté comme professionnel");
+      } else if (headerContext.includes("encadrant isimm") || headerContext.includes("academic") || headerContext.includes("academique")) {
+        categorie = "academique"
+        console.log("Détecté comme académique");
       } else {
-        // Try to detect from column headers context
-        const headerContext = headers.join(" ")
-        console.log("Header context for categorie detection:", headerContext)
-        if (headerContext.includes("isimm") || headerContext.includes("academic")) {
-          categorie = "academique"
-        }
+        // Par défaut, académique
+        categorie = "academique"
+        console.log("Défaut: académique");
       }
 
       const supervisor: Supervisor = {
@@ -701,22 +678,7 @@ export class ExcelParser {
       companies.push(...this.parseCompanies(sheetData, year))
       supervisors.push(...this.parseSupervisors(sheetData, year))
 
-      // switch (dataType) {
-      //   case "students":
-      //     students.push(...this.parseStudents(sheetData, year))
-      //     break
-      //   case "companies":
-      //     companies.push(...this.parseCompanies(sheetData, year))
-      //     break
-      //   case "supervisors":
-      //     supervisors.push(...this.parseSupervisors(sheetData, year))
-      //     break
-      //   default:
-      //     // Try to parse as students by default if structure matches
-      //     if (headers.some((h: any) => h != null && String(h).toLowerCase().includes("nom"))) {
-      //       students.push(...this.parseStudents(sheetData, year))
-      //     }
-      // }
+      
     })
 
     // Apply smart deduplication
@@ -726,6 +688,10 @@ export class ExcelParser {
     // Calculate detailed summary statistics
     const academiques = deduplicatedSupervisors.supervisors.filter(s => s.categorie === "academique")
     const professionnels = deduplicatedSupervisors.supervisors.filter(s => s.categorie === "professionnel")
+    
+    // Debug log pour voir la répartition des encadreurs
+    console.log(`=== RÉSULTAT ENCADREURS ===`);
+    console.log(`Encadreurs détectés: ${academiques.length} académiques, ${professionnels.length} professionnels`);
     const binomes = students.filter(s => s.collaboration === "binome")
     const monomes = students.filter(s => s.collaboration === "monome")
     const internes = students.filter(s => s.localisation_type === "interne")
