@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { ExcelParser, type ParsedExcelData, type Student, type Company, type Supervisor } from "@/lib/excel-parser"
+import { Calendar } from "lucide-react"
 
 interface DataTableProps {
   data: ParsedExcelData | null
@@ -27,19 +28,26 @@ export function DataTable({ data, activeTab }: DataTableProps) {
   }
 
   const renderStudentRow = (student: Student) => (
-    <TableRow key={student.id}>
-      <TableCell className="font-medium">{student.nom}</TableCell>
-      <TableCell>{student.prenom}</TableCell>
-      <TableCell>{student.specialisation}</TableCell>
+    <TableRow key={student.codeProjet}>
+      <TableCell>{student.codeProjet}</TableCell>
+      <TableCell className="font-medium">{student.prenom}</TableCell>
+      <TableCell>{student.cin}</TableCell>
+      <TableCell>{student.filiere}</TableCell>
+      <TableCell>{student.score}</TableCell>
+      <TableCell>{student.titreProjet}</TableCell>
+      <TableCell>{student.collaboration}</TableCell>
+      <TableCell>{student.collaborateur?.prenom|| ""}</TableCell>
       <TableCell>{student.annee}</TableCell>
-      <TableCell>{student.societe || "N/A"}</TableCell>
-      <TableCell>{student.encadreur || "N/A"}</TableCell>
+      <TableCell>{student.companyId || "N/A"}</TableCell>
+      <TableCell>{student.encadreurAcId || "N/A"}</TableCell>
+      <TableCell>{student.encadreurProId || "N/A"}</TableCell>
+      <TableCell>{student.localisation_type || "Externe"}</TableCell>
       <TableCell>{student.email || "N/A"}</TableCell>
       <TableCell>{student.telephone || "N/A"}</TableCell>
+      <TableCell>{student.ficheInformation|| "N/A"}</TableCell>
+      <TableCell>{student.cahierCharge || "N/A"}</TableCell>
       <TableCell>
-        <Badge variant={student.statut === "actif" ? "default" : student.statut === "diplome" ? "secondary" : "destructive"}>
-          {student.statut}
-        </Badge>
+          {student.debutStage ? new Date(student.debutStage).toLocaleDateString('fr-FR') : "15/01/"+ student.annee}
       </TableCell>
     </TableRow>
   )
@@ -61,9 +69,9 @@ export function DataTable({ data, activeTab }: DataTableProps) {
 
   const renderSupervisorRow = (supervisor: Supervisor) => (
     <TableRow key={supervisor.id}>
-      <TableCell className="font-medium">{supervisor.nom}</TableCell>
+      <TableCell className="font-medium">{supervisor.prenom}</TableCell>
       <TableCell>{supervisor.prenom}</TableCell>
-      <TableCell>{supervisor.specialisation}</TableCell>
+      <TableCell>{supervisor.categorie}</TableCell>
       <TableCell>{supervisor.annee}</TableCell>
       <TableCell>{supervisor.email || "N/A"}</TableCell>
       <TableCell>{supervisor.telephone || "N/A"}</TableCell>
@@ -78,11 +86,15 @@ export function DataTable({ data, activeTab }: DataTableProps) {
       <TableCell className="font-medium">{item.type}</TableCell>
       <TableCell>{item.nom || item.societe || "N/A"}</TableCell>
       <TableCell>{item.prenom || item.secteur || "N/A"}</TableCell>
-      <TableCell>{item.specialisation || "N/A"}</TableCell>
+      <TableCell>{item.filiere || item.categorie || item.specialisation || "N/A"}</TableCell>
       <TableCell>{item.annee}</TableCell>
       <TableCell>{item.email || "N/A"}</TableCell>
       <TableCell>{item.telephone || "N/A"}</TableCell>
-      <TableCell>{item.societe || item.nombreStagiaires || item.nombreEtudiants || "N/A"}</TableCell>
+      <TableCell>
+        {item.type === "student" && (item.titreProjet || "N/A")}
+        {item.type === "company" && (item.adresse || item.nombreStagiaires || "N/A")}
+        {item.type === "supervisor" && (item.nombreEtudiants || "N/A")}
+      </TableCell>
     </TableRow>
   )
 
@@ -93,15 +105,24 @@ export function DataTable({ data, activeTab }: DataTableProps) {
           <>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
+                <TableHead>Code Projet</TableHead>
                 <TableHead>Prénom</TableHead>
-                <TableHead>Spécialisation</TableHead>
+                <TableHead>CIN</TableHead>
+                <TableHead>Filière</TableHead>
+                <TableHead>Score</TableHead>
+                <TableHead>Titre Projet</TableHead>
+                <TableHead>Collaboration</TableHead>
+                <TableHead>Collaborateur</TableHead>
                 <TableHead>Année</TableHead>
-                <TableHead>Société</TableHead>
-                <TableHead>Encadreur</TableHead>
+                <TableHead>ID Entreprise</TableHead>
+                <TableHead>Encadreur Académique</TableHead>
+                <TableHead>Encadreur Professionnel</TableHead>
+                <TableHead>Localisation</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
-                <TableHead>Statut</TableHead>
+                <TableHead>Fiche Information</TableHead>
+                <TableHead>Cahier de Charge</TableHead>
+                <TableHead>Début Stage</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,7 +130,7 @@ export function DataTable({ data, activeTab }: DataTableProps) {
                 data.students.map(renderStudentRow)
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={18} className="text-center text-muted-foreground">
                     Aucun étudiant trouvé
                   </TableCell>
                 </TableRow>
@@ -152,9 +173,9 @@ export function DataTable({ data, activeTab }: DataTableProps) {
           <>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
                 <TableHead>Prénom</TableHead>
-                <TableHead>Spécialisation</TableHead>
+                <TableHead>Prénom</TableHead>
+                <TableHead>Catégorie</TableHead>
                 <TableHead>Année</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
@@ -190,11 +211,11 @@ export function DataTable({ data, activeTab }: DataTableProps) {
                 <TableHead>Type</TableHead>
                 <TableHead>Nom/Société</TableHead>
                 <TableHead>Prénom/Secteur</TableHead>
-                <TableHead>Spécialisation</TableHead>
+                <TableHead>Filière/Catégorie</TableHead>
                 <TableHead>Année</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Téléphone</TableHead>
-                <TableHead>Autre</TableHead>
+                <TableHead>Détails</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

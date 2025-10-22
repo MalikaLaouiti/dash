@@ -491,7 +491,7 @@ export class ExcelParser {
       dureeStage: headers.findIndex((h) => h && (h.includes("durée stage") || h.includes("duree") || h.includes("duration"))),
       debutStage: headers.findIndex((h) => h && (h.includes("début stage") || h.includes("debut") || h.includes("start"))),
       finStage: headers.findIndex((h) => h && (h.includes("fin stage") || h.includes("end"))),
-      collaboration: headers.findIndex((h) => h && (h.includes("group type") || h.includes("binome") || h.includes("monome"))),
+      collaboration: headers.findIndex((h) => h && ( h.includes("group type"))),
       collaborateur: headers.findIndex((h) => h && (h.includes("collaborateur") || h.includes("deuxième étudiant"))),
       ficheInformation: headers.findIndex((h) => h && (h.includes("fiche") || h.includes("fiche d'informations scannée"))),
       cahierCharge: headers.findIndex((h) => h && (h.includes("cahier charges") || h.includes("charge"))),
@@ -524,12 +524,12 @@ export class ExcelParser {
         encadreurAcId: indices.encadreurAc >= 0 ? String(row[indices.encadreurAc] || "") : undefined,
         encadreurProId: indices.encadreurPro >= 0 ? String(row[indices.encadreurPro] || "") : undefined,
         dureeStage: indices.dureeStage >= 0 ? String(row[indices.dureeStage] || "") : undefined,
-        debutStage: indices.debutStage >= 0 ? parseDate(row[indices.debutStage]) : undefined,
-        finStage: indices.finStage >= 0 ? parseDate(row[indices.finStage]) : undefined,
+        debutStage: indices.debutStage >= 0 ? parseDate(row[indices.debutStage]) :new Date(),
+        finStage: indices.finStage >= 0 ? parseDate(row[indices.finStage]) : new Date(),
         collaboration: indices.collaboration >= 0 ? 
-          (String(row[indices.collaboration] || "").toLowerCase().includes("binome") ? "binome" : "monome") : "monome",
+          (String(row[indices.collaboration] || "").toLowerCase().includes("binôme") ? "binome" : "monome") : "monome",
         collaborateur: indices.collaborateur >= 0 ? 
-          { codeProjet: "", cin: 0, prenom: String(row[indices.collaborateur] || ""), filiere: "", annee: year, collaboration: "monome" as const } : undefined,
+          { codeProjet: "", cin: 0, prenom: String(row[indices.collaborateur] || ""), filiere: "", annee: year, collaboration: "binome" as const } : undefined,
         ficheInformation: indices.ficheInformation >= 0 ? String(row[indices.ficheInformation] || "") : undefined,
         cahierCharge: indices.cahierCharge >= 0 ? String(row[indices.cahierCharge] || "") : undefined,
       }
@@ -614,14 +614,16 @@ export class ExcelParser {
       let categorie: "professionnel" | "academique" = "academique"
       if (indices.categorie >= 0) {
         const categorieValue = String(row[indices.categorie] || "").toLowerCase()
+        console.log("Categorie value:", categorieValue)
         if (categorieValue.includes("professionnel") || categorieValue.includes("professional")) {
           categorie = "professionnel"
         }
       } else {
         // Try to detect from column headers context
         const headerContext = headers.join(" ")
-        if (headerContext.includes("professional") || headerContext.includes("entreprise")) {
-          categorie = "professionnel"
+        console.log("Header context for categorie detection:", headerContext)
+        if (headerContext.includes("isimm") || headerContext.includes("academic")) {
+          categorie = "academique"
         }
       }
 
