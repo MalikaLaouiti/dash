@@ -43,9 +43,9 @@ export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: 
         url: "#",
         year: year
       })) : [
-        { title: "2022", url: "#", year: "2022" },
-        { title: "2023", url: "#", year: "2023" },
         { title: "2024", url: "#", year: "2024" },
+        { title: "2023", url: "#", year: "2023" },
+        { title: "2022", url: "#", year: "2022" },
       ],
     },
     {

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import React from "react";
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 
@@ -18,9 +17,13 @@ export const metadata: Metadata = {
   description: "Dashboard d'Analyse Stage de l'IsIMM",
 };
 
-export default function RootLayout({children,}: Readonly<{children: React.ReactNode;}>) {
+export default function RootLayout({ 
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-   <html>
+    <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
