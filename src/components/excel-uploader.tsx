@@ -47,7 +47,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
           const parsedData = ExcelParser.parseExcelData(rawData)
 
           onDataLoad(parsedData)
-          console.log("Données Excel importées:", parsedData)
+          // console.log("Données Excel importées:", parsedData)
           setUploadStatus("success")
         } catch (error) {
           console.error("Erreur lors du parsing du fichier Excel:", error)

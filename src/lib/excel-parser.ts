@@ -448,7 +448,7 @@ export class ExcelParser {
 
     const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
     const students: Student[] = []
-    console.log("Parsing headers:", headers)
+    // console.log("Parsing headers:", headers)
     // Find column indices with safe string operations
     const indices = {
       codeProject: headers.findIndex((h) => h && (h.includes("code projet") || h.includes("code"))),
@@ -533,6 +533,7 @@ export class ExcelParser {
       encadrantPro: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("professional supervisor"))),
       stagiaires: headers.findIndex((h) => h && (h.includes("nombre de stagiaires") || h.includes("number of interns"))),
     }
+    console.log("Indices:", indices)
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i]
@@ -566,59 +567,81 @@ export class ExcelParser {
 
     return companies
   }
-
   private static parseSupervisors(data: any[][], year: string): Supervisor[] {
     if (data.length < 2) return []
-
-    const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
+  
+    const headers = (data[0] || []).map((h: any) => 
+      (h != null ? String(h).toLowerCase().trim() : "")
+    )
     const supervisors: Supervisor[] = []
-
-    const indices = {
-      prenom: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("encadrant isimm"))),
-      email: headers.findIndex((h) => h && (h.includes("email *") || h.includes("mail *"))),
-      telephone: headers.findIndex((h) => h && (h.includes("phone number *") || h.includes("telephone") || h.includes("tel") )),
-      etudiants: headers.findIndex((h) => h && (h.includes("etudiant") || h.includes("nombre") || h.includes("student"))),
-      categorie: headers.findIndex((h) => h && (h.includes("categorie") || h.includes("type") || h.includes("academic") || h.includes("professional"))),
+    
+    // Find indices for BOTH supervisor types
+    const academicIndices = {
+      prenom: headers.findIndex((h) => h.includes("encadrant isimm") && !h.includes("e-mail") && !h.includes("phone")),
+      email: headers.findIndex((h) => h.includes("e-mail encadrant isimm")),
+      telephone: headers.findIndex((h) => h.includes("phone number encadrant isimm")),
     }
-
+    
+    const professionalIndices = {
+      prenom: headers.findIndex((h) => h.includes("encadrant professionnel") && !h.includes("e-mail") && !h.includes("phone")),
+      email: headers.findIndex((h) => h.includes("e-mail") && h.includes("encadrant professionnel")),
+      telephone: headers.findIndex((h) => h.includes("phone number encadrant professionnel")),
+    }
+    
+    const sharedIndices = {
+      etudiants: headers.findIndex((h) => h.includes("etudiant") || h.includes("prenom")),
+    }
+    
+    console.log("Academic Indices:", academicIndices)
+    console.log("Professional Indices:", professionalIndices)
+    console.log("Shared Indices:", sharedIndices)
+    
+    // Parse rows
     for (let i = 1; i < data.length; i++) {
       const row = data[i]
       if (!row || row.length === 0) continue
-
-      // Determine category based on column headers or content
-      let categorie: "professionnel" | "academique" = "academique"
-      const headerContext = headers.join(" ")
       
-      // Debug log pour voir le contexte des en-têtes
-      console.log("Header context for supervisors:", headerContext);
+      // Extract ACADEMIC supervisor if present
+      if (academicIndices.prenom >= 0) {
+        const prenomAcademique = row[academicIndices.prenom] ? String(row[academicIndices.prenom]).trim() : ""
+        
+        if (prenomAcademique) {
+          const academicSupervisor: Supervisor = {
+            id: `temp_supervisor_academique_${year}_${i}`,
+            prenom: prenomAcademique,
+            annee: year,
+            email: academicIndices.email >= 0 ? String(row[academicIndices.email] || "").trim() || undefined : undefined,
+            telephone: academicIndices.telephone >= 0 ? String(row[academicIndices.telephone] || "").trim() || undefined : undefined,
+            nombreEtudiants: 1, // Each row represents one student
+            categorie: "academique",
+          }
+          
+          console.log("Academic Supervisor:", academicSupervisor)
+          supervisors.push(academicSupervisor)
+        }
+      }
       
-      if (headerContext.includes("encadrant professionnel") || headerContext.includes("professional")) {
-        categorie = "professionnel"
-        console.log("Détecté comme professionnel");
-      } else if (headerContext.includes("encadrant isimm") || headerContext.includes("academic") || headerContext.includes("academique")) {
-        categorie = "academique"
-        console.log("Détecté comme académique");
-      } else {
-        // Par défaut, académique
-        categorie = "academique"
-        console.log("Défaut: académique");
-      }
-
-      const supervisor: Supervisor = {
-        id: `temp_supervisor_${categorie}_${year}_${i}`, // Will be assigned proper ID during deduplication
-        prenom: indices.prenom >= 0 ? String(row[indices.prenom] || "") : "",
-        annee: year,
-        email: indices.email >= 0 ? String(row[indices.email] || "") : undefined,
-        telephone: indices.telephone >= 0 ? String(row[indices.telephone] || "") : undefined,
-        nombreEtudiants: indices.etudiants >= 0 ? Number(row[indices.etudiants]) || 0 : 0,
-        categorie: categorie,
-      }
-
-      if (supervisor.prenom) {
-        supervisors.push(supervisor)
+      // Extract PROFESSIONAL supervisor if present
+      if (professionalIndices.prenom >= 0) {
+        const prenomProfessionnel = row[professionalIndices.prenom] ? String(row[professionalIndices.prenom]).trim() : ""
+        
+        if (prenomProfessionnel) {
+          const professionalSupervisor: Supervisor = {
+            id: `temp_supervisor_professionnel_${year}_${i}`,
+            prenom: prenomProfessionnel,
+            annee: year,
+            email: professionalIndices.email >= 0 ? String(row[professionalIndices.email] || "").trim() || undefined : undefined,
+            telephone: professionalIndices.telephone >= 0 ? String(row[professionalIndices.telephone] || "").trim() || undefined : undefined,
+            nombreEtudiants: 1, // Each row represents one student
+            categorie: "professionnel",
+          }
+          
+          console.log("Professional Supervisor:", professionalSupervisor)
+          supervisors.push(professionalSupervisor)
+        }
       }
     }
-
+  
     return supervisors
   }
 
