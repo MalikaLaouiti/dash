@@ -50,7 +50,7 @@ export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: 
     },
     {
       title: "Encadrent",
-      url: "#",
+      url: "/encadrant",
       icon: UserStar,
     },
     {
@@ -58,11 +58,6 @@ export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: 
       url: "#",
       icon: Building2,
     },
-  {
-    title: "Statistique",
-    url: "#",
-    icon: ChartNoAxesCombined,
-  },
   {
     title: "Analyse",
     url: "/analyse",
