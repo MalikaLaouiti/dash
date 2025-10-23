@@ -1,9 +1,0 @@
-Nom,Prenom,Specialisation,Societe,Encadreur,Email,Telephone,Statut
-Dupont,Jean,Informatique,Microsoft,Sarah Martin,jean.dupont@email.com,0123456789,actif
-Martin,Sarah,Genie Civil,Google,Pierre Durand,sarah.martin@email.com,0123456790,actif
-Durand,Pierre,Electronique,Apple,Marie Leclerc,pierre.durand@email.com,0123456791,diplome
-Leclerc,Marie,Informatique,Facebook,Jean Dupont,marie.leclerc@email.com,0123456792,actif
-Moreau,Thomas,Genie Civil,Amazon,Sarah Martin,thomas.moreau@email.com,0123456793,abandonne
-Petit,Julie,Electronique,Tesla,Pierre Durand,julie.petit@email.com,0123456794,actif
-Garcia,Antoine,Informatique,Netflix,Marie Leclerc,antoine.garcia@email.com,0123456795,diplome
-Roux,Sophie,Genie Civil,Spotify,Jean Dupont,sophie.roux@email.com,0123456796,actif

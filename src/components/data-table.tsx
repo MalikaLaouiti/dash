@@ -16,15 +16,22 @@ import { Calendar } from "lucide-react"
 interface DataTableProps {
   data: ParsedExcelData | null
   activeTab: "students" | "companies" | "supervisors" | "supervisors-academic" | "supervisors-professional" | "raw"
+  selectedYear?: string
 }
 
-export function DataTable({ data, activeTab }: DataTableProps) {
+export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
   if (!data) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         <p>Aucune donnée à afficher. Importez un fichier Excel pour commencer.</p>
       </div>
     )
+  }
+
+  // Fonction pour filtrer les données par année
+  const filterByYear = <T extends { annee: string }>(items: T[]): T[] => {
+    if (!selectedYear) return items
+    return items.filter(item => item.annee === selectedYear)
   }
 
   const renderStudentRow = (student: Student) => (
@@ -126,12 +133,12 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.students.length > 0 ? (
-                data.students.map(renderStudentRow)
+              {filterByYear(data.students).length > 0 ? (
+                filterByYear(data.students).map(renderStudentRow)
               ) : (
                 <TableRow>
                   <TableCell colSpan={18} className="text-center text-muted-foreground">
-                    Aucun étudiant trouvé
+                    {selectedYear ? `Aucun étudiant trouvé pour l'année ${selectedYear}` : "Aucun étudiant trouvé"}
                   </TableCell>
                 </TableRow>
               )}
@@ -155,12 +162,12 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.companies.length > 0 ? (
-                data.companies.map(renderCompanyRow)
+              {filterByYear(data.companies).length > 0 ? (
+                filterByYear(data.companies).map(renderCompanyRow)
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    Aucune entreprise trouvée
+                    {selectedYear ? `Aucune entreprise trouvée pour l'année ${selectedYear}` : "Aucune entreprise trouvée"}
                   </TableCell>
                 </TableRow>
               )}
@@ -183,12 +190,12 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.supervisors.length > 0 ? (
-                data.supervisors.map(renderSupervisorRow)
+              {filterByYear(data.supervisors).length > 0 ? (
+                filterByYear(data.supervisors).map(renderSupervisorRow)
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    Aucun encadreur trouvé
+                    {selectedYear ? `Aucun encadreur trouvé pour l'année ${selectedYear}` : "Aucun encadreur trouvé"}
                   </TableCell>
                 </TableRow>
               )}
@@ -211,12 +218,12 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.supervisors.filter(s => s.categorie === "academique").length > 0 ? (
-                data.supervisors.filter(s => s.categorie === "academique").map(renderSupervisorRow)
+              {filterByYear(data.supervisors.filter(s => s.categorie === "academique")).length > 0 ? (
+                filterByYear(data.supervisors.filter(s => s.categorie === "academique")).map(renderSupervisorRow)
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    Aucun encadreur académique trouvé
+                    {selectedYear ? `Aucun encadreur académique trouvé pour l'année ${selectedYear}` : "Aucun encadreur académique trouvé"}
                   </TableCell>
                 </TableRow>
               )}
@@ -239,12 +246,12 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.supervisors.filter(s => s.categorie === "professionnel").length > 0 ? (
-                data.supervisors.filter(s => s.categorie === "professionnel").map(renderSupervisorRow)
+              {filterByYear(data.supervisors.filter(s => s.categorie === "professionnel")).length > 0 ? (
+                filterByYear(data.supervisors.filter(s => s.categorie === "professionnel")).map(renderSupervisorRow)
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    Aucun encadreur professionnel trouvé
+                    {selectedYear ? `Aucun encadreur professionnel trouvé pour l'année ${selectedYear}` : "Aucun encadreur professionnel trouvé"}
                   </TableCell>
                 </TableRow>
               )}
@@ -253,11 +260,11 @@ export function DataTable({ data, activeTab }: DataTableProps) {
         )
 
       case "raw":
-        // Combine all data for raw view
+        // Combine all data for raw view with year filtering
         const allData = [
-          ...data.students.map(s => ({ ...s, type: "student" })),
-          ...data.companies.map(c => ({ ...c, type: "company" })),
-          ...data.supervisors.map(s => ({ ...s, type: "supervisor" }))
+          ...filterByYear(data.students).map(s => ({ ...s, type: "student" })),
+          ...filterByYear(data.companies).map(c => ({ ...c, type: "company" })),
+          ...filterByYear(data.supervisors).map(s => ({ ...s, type: "supervisor" }))
         ]
         
         return (
@@ -280,7 +287,7 @@ export function DataTable({ data, activeTab }: DataTableProps) {
               ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    Aucune donnée trouvée
+                    {selectedYear ? `Aucune donnée trouvée pour l'année ${selectedYear}` : "Aucune donnée trouvée"}
                   </TableCell>
                 </TableRow>
               )}

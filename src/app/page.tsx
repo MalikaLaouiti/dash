@@ -22,22 +22,42 @@ export default function Home() {
   })
   const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
   const [activeTab, setActiveTab] = useState<"students" | "companies" | "supervisors-academic" | "supervisors-professional" | "raw">("students");
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
 
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
+    // Sélectionner automatiquement la première année disponible
+    if (data.summary.yearsCovered.length > 0 && !selectedYear) {
+      setSelectedYear(data.summary.yearsCovered[0]);
+    }
   };
 
-  const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters) : [];
+  const handleYearSelect = (year: string) => {
+    setSelectedYear(year);
+  };
+
+  const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters, selectedYear || undefined) : [];
 
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
-        <AppSidebar />
+        <AppSidebar 
+          selectedYear={selectedYear || undefined}
+          onYearSelect={handleYearSelect}
+          availableYears={parsedData?.summary.yearsCovered || []}
+        />
         <main className="flex-1 flex flex-col overflow-hidden">
           <SidebarTrigger />
           
           <div className="flex items-center justify-between mb-4 p-6 border-b border-border">
-            <h1 className="text-2xl font-bold text-foreground gap-2">Dashboard d&apos;Analyse Académique</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-foreground">Dashboard d&apos;Analyse Académique</h1>
+              {selectedYear && (
+                <Badge variant="default" className="text-sm">
+                  Année: {selectedYear}
+                </Badge>
+              )}
+            </div>
             <ExcelUploader onDataLoad={handleDataLoad} />
           </div>
           
@@ -112,23 +132,23 @@ export default function Home() {
               </TabsList>
 
               <TabsContent value="students" className="mt-6">
-                <DataTable data={parsedData} activeTab="students" />
+                <DataTable data={parsedData} activeTab="students" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
               <TabsContent value="companies" className="mt-6">
-                <DataTable data={parsedData} activeTab="companies" />
+                <DataTable data={parsedData} activeTab="companies" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
               <TabsContent value="supervisors-academic" className="mt-6">
-                <DataTable data={parsedData} activeTab="supervisors-academic" />
+                <DataTable data={parsedData} activeTab="supervisors-academic" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
               <TabsContent value="supervisors-professional" className="mt-6">
-                <DataTable data={parsedData} activeTab="supervisors-professional" />
+                <DataTable data={parsedData} activeTab="supervisors-professional" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
               <TabsContent value="raw" className="mt-6">
-                <DataTable data={parsedData} activeTab="raw" />
+                <DataTable data={parsedData} activeTab="raw" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
               <TabsContent value="json" className="mt-6">
