@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IStudent extends Document {
+export interface Student extends Document {
   codeProjet: string;
   cin: number;
   prenom: string;
@@ -32,7 +32,7 @@ export interface IStudent extends Document {
   updatedAt: Date;
 }
 
-const StudentSchema = new Schema<IStudent>({
+const StudentSchema = new Schema<Student>({
   codeProjet: { type: String, required: true },
   cin: { type: Number, required: true },
   prenom: { type: String, required: true },
@@ -71,4 +71,4 @@ StudentSchema.index({ score: -1 });
 StudentSchema.index({ encadreurAcId: 1 });
 StudentSchema.index({ encadreurProId: 1 });
 
-export default mongoose.models.Student || mongoose.model<IStudent>('Student', StudentSchema);
+export default mongoose.models.Student || mongoose.model<Student>('Student', StudentSchema);

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface ICompany extends Document {
+export interface Company extends Document {
   nom: string;
   secteur: string;
   annee: string;
@@ -22,7 +22,7 @@ export interface ICompany extends Document {
   updatedAt: Date;
 }
 
-const CompanySchema = new Schema<ICompany>({
+const CompanySchema = new Schema<Company>({
   nom: { type: String, required: true },
   secteur: { type: String, required: true },
   annee: { type: String, required: true },
@@ -49,4 +49,4 @@ CompanySchema.index({ annee: 1 });
 CompanySchema.index({ nom: 1 });
 CompanySchema.index({ secteur: 1 });
 
-export default mongoose.models.Company || mongoose.model<ICompany>('Company', CompanySchema);
+export default mongoose.models.Company || mongoose.model<Company>('Company', CompanySchema);

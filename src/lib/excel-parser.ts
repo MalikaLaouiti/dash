@@ -77,7 +77,6 @@ export interface ParsedExcelData {
 
 export class ExcelParser {
   
-  // private static companyIdCounter = 1
   // private static supervisorIdCounter = 1
 
   // // Helper method to generate unique IDs
@@ -228,9 +227,9 @@ export class ExcelParser {
         if (!existing.email && company.email) existing.email = company.email
         if (!existing.telephone && company.telephone) existing.telephone = company.telephone
         
-        // NE PAS additionner nombreStagiaires ici (sera calculé plus tard)
+        
       } else {
-        // Nouvelle société
+        
         company.id = `company_${this.companyIdCounter++}`
         company.nombreStagiaires = 0 // Reset, sera calculé plus tard
         
@@ -249,11 +248,6 @@ export class ExcelParser {
     return { companies: unique, removed }
   }
 
-  /**
-   * CORRECTION 2: Déduplication des superviseurs
-   * Critère: prenom + categorie uniquement (pas d'année)
-   * Compte les étudiants par codeProjet unique
-   */
   private static deduplicateSupervisors(
     supervisors: Supervisor[], 
     students: Student[]

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface ISupervisor extends Document {
+export interface Supervisor extends Document {
   prenom: string;
   email?: string;
   telephone?: string;
@@ -11,7 +11,7 @@ export interface ISupervisor extends Document {
   updatedAt: Date;
 }
 
-const SupervisorSchema = new Schema<ISupervisor>({
+const SupervisorSchema = new Schema<Supervisor>({
   prenom: { type: String, required: true },
   email: { type: String },
   telephone: { type: String },
@@ -28,4 +28,4 @@ SupervisorSchema.index({ categorie: 1 });
 SupervisorSchema.index({ prenom: 1 });
 SupervisorSchema.index({ nombreEtudiants: -1 });
 
-export default mongoose.models.Supervisor || mongoose.model<ISupervisor>('Supervisor', SupervisorSchema);
+export default mongoose.models.Supervisor || mongoose.model<Supervisor>('Supervisor', SupervisorSchema);
