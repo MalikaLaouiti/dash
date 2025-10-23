@@ -99,7 +99,7 @@ export function JsonPreview({ data }: JsonPreviewProps) {
             {data.summary.totalCompanies} entreprises
           </Badge>
           <Badge variant="secondary">
-            {data.summary.totalSupervisors} encadreurs
+            {data.summary.totalSupervisors.total} encadreurs
           </Badge>
           <Badge variant="outline">
             {data.summary.yearsCovered.length} année(s): {data.summary.yearsCovered.join(", ")}

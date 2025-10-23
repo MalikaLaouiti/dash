@@ -76,7 +76,7 @@ export interface ParsedExcelData {
 }
 
 export class ExcelParser {
-  // // Global counters for auto-increment IDs
+  
   // private static companyIdCounter = 1
   // private static supervisorIdCounter = 1
 
@@ -186,11 +186,6 @@ export class ExcelParser {
   private static supervisorAcademiqueIdCounter = 1
   private static supervisorProfessionnelIdCounter = 1
 
-  /**
-   * CORRECTION 1: Déduplication des sociétés
-   * Critère: nom uniquement (pas d'année)
-   * Fusionne les encadrants sans doublons
-   */
   private static deduplicateCompanies(companies: Company[]): { 
     companies: Company[]
     removed: number 
@@ -457,7 +452,7 @@ export class ExcelParser {
       filiere: headers.findIndex((h) => h && (h.includes("filiére") || h.includes("specialisation") || h.includes("filiére"))),
       email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
       telephone: headers.findIndex((h) => h && (h.includes("téléphone") || h.includes("phone number") )),
-      titreProjet: headers.findIndex((h) => h && (h.includes("titre du sujet") || h.includes("projet") || h.includes("sujet"))),
+      titreProjet: headers.findIndex((h) => h && (h.includes("titre du sujet") )),
       score: headers.findIndex((h) => h && (h.includes("score") || h.includes("note"))),
       companyId: headers.findIndex((h) => h && (h.includes("société") || h.includes("entreprise") || h.includes("company"))),
       localisationType: headers.findIndex((h) => h && (h.includes("type")  || h.includes("interne/externe"))),

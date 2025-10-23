@@ -259,41 +259,41 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
           </>
         )
 
-      case "raw":
-        // Combine all data for raw view with year filtering
-        const allData = [
-          ...filterByYear(data.students).map(s => ({ ...s, type: "student" })),
-          ...filterByYear(data.companies).map(c => ({ ...c, type: "company" })),
-          ...filterByYear(data.supervisors).map(s => ({ ...s, type: "supervisor" }))
-        ]
+      // case "raw":
+      //   // Combine all data for raw view with year filtering
+      //   const allData = [
+      //     ...filterByYear(data.students).map(s => ({ ...s, type: "student" })),
+      //     ...filterByYear(data.companies).map(c => ({ ...c, type: "company" })),
+      //     ...filterByYear(data.supervisors).map(s => ({ ...s, type: "supervisor" }))
+      //   ]
         
-        return (
-          <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Nom/Société</TableHead>
-                <TableHead>Prénom/Secteur</TableHead>
-                <TableHead>Filière/Catégorie</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Détails</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allData.length > 0 ? (
-                allData.map(renderRawDataRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucune donnée trouvée pour l'année ${selectedYear}` : "Aucune donnée trouvée"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </>
-        )
+      //   return (
+      //     <>
+      //       <TableHeader>
+      //         <TableRow>
+      //           <TableHead>Type</TableHead>
+      //           <TableHead>Nom/Société</TableHead>
+      //           <TableHead>Prénom/Secteur</TableHead>
+      //           <TableHead>Filière/Catégorie</TableHead>
+      //           <TableHead>Année</TableHead>
+      //           <TableHead>Email</TableHead>
+      //           <TableHead>Téléphone</TableHead>
+      //           <TableHead>Détails</TableHead>
+      //         </TableRow>
+      //       </TableHeader>
+      //       <TableBody>
+      //         {allData.length > 0 ? (
+      //           allData.map(renderRawDataRow)
+      //         ) : (
+      //           <TableRow>
+      //             <TableCell colSpan={8} className="text-center text-muted-foreground">
+      //               {selectedYear ? `Aucune donnée trouvée pour l'année ${selectedYear}` : "Aucune donnée trouvée"}
+      //             </TableCell>
+      //           </TableRow>
+      //         )}
+      //       </TableBody>
+      //     </>
+      //   )
 
       default:
         return null

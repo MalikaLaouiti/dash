@@ -95,8 +95,12 @@ export default function Home() {
                       <span className="text-sm">Entreprises</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{parsedData.summary.totalSupervisors.total}</Badge>
-                      <span className="text-sm">Encadreurs</span>
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors.academiques}</Badge>
+                      <span className="text-sm">Encadreurs Académiques</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors.professionnels}</Badge>
+                      <span className="text-sm">Encadreurs Professionnels</span>
                     </div>
               </div>
                   <div className="mt-4">
@@ -110,7 +114,7 @@ export default function Home() {
             )}
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="students">
                   Étudiants ({parsedData?.summary.totalStudents || 0})
                 </TabsTrigger>
@@ -123,9 +127,9 @@ export default function Home() {
                 <TabsTrigger value="supervisors-professional">
                   Encadreurs Professionnels ({parsedData?.summary.totalSupervisors.professionnels || 0})
                 </TabsTrigger>
-                <TabsTrigger value="raw">
+                {/* <TabsTrigger value="raw">
                   Vue combinée ({filteredData.length})
-                </TabsTrigger>
+                </TabsTrigger> */}
                 <TabsTrigger value="json">
                   JSON
                 </TabsTrigger>
@@ -147,9 +151,9 @@ export default function Home() {
                 <DataTable data={parsedData} activeTab="supervisors-professional" selectedYear={selectedYear || undefined} />
               </TabsContent>
 
-              <TabsContent value="raw" className="mt-6">
+              {/* <TabsContent value="raw" className="mt-6">
                 <DataTable data={parsedData} activeTab="raw" selectedYear={selectedYear || undefined} />
-              </TabsContent>
+              </TabsContent> */}
 
               <TabsContent value="json" className="mt-6">
                 <JsonPreview data={parsedData} />
