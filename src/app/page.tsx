@@ -127,10 +127,9 @@ export default function Home() {
                 <TabsTrigger value="supervisors-professional">
                   Encadreurs Professionnels ({parsedData?.summary.totalSupervisors.professionnels || 0})
                 </TabsTrigger>
-<<<<<<< HEAD
-                
-=======
->>>>>>> 32f0ae0 (cleaning code in excel parser ..)
+                {/* <TabsTrigger value="raw">
+                  Vue combinée ({filteredData.length})
+                </TabsTrigger> */}
                 <TabsTrigger value="json">
                   JSON
                 </TabsTrigger>
@@ -151,11 +150,11 @@ export default function Home() {
               <TabsContent value="supervisors-professional" className="mt-6">
                 <DataTable data={parsedData} activeTab="supervisors-professional" selectedYear={selectedYear || undefined} />
               </TabsContent>
-<<<<<<< HEAD
 
-=======
-              
->>>>>>> 32f0ae0 (cleaning code in excel parser ..)
+              {/* <TabsContent value="raw" className="mt-6">
+                <DataTable data={parsedData} activeTab="raw" selectedYear={selectedYear || undefined} />
+              </TabsContent> */}
+
               <TabsContent value="json" className="mt-6">
                 <JsonPreview data={parsedData} />
               </TabsContent>
