@@ -18,34 +18,57 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-
+  
     setIsLoading(true)
     setFileName(file.name)
     setUploadStatus("idle")
-
+  
     try {
       const XLSX = await import("xlsx")
-
       const reader = new FileReader()
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer)
           const workbook = XLSX.read(data, { type: "array" })
-
+  
           const sheets: any = {}
           workbook.SheetNames.forEach((sheetName) => {
             const worksheet = workbook.Sheets[sheetName]
             sheets[sheetName] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
           })
-
+  
           const rawData = {
             sheets,
             sheetNames: workbook.SheetNames,
             fileName: file.name,
           }
-
+  
           const parsedData = ExcelParser.parseExcelData(rawData)
-
+  
+          
+          fetch('/api/save-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ rawExcelData: rawData }),
+          })
+            .then(saveResponse => {
+              if (saveResponse.ok) {
+                return saveResponse.json();
+              } else {
+                console.error('Erreur lors de la sauvegarde');
+              }
+            })
+            .then(saveResult => {
+              if (saveResult) {
+                console.log('Données sauvegardées:', saveResult);
+              }
+            })
+            .catch(saveError => {
+              console.error('Erreur lors de la sauvegarde:', saveError);
+            });
+  
           onDataLoad(parsedData)
           // console.log("Données Excel importées:", parsedData)
           setUploadStatus("success")
@@ -56,7 +79,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
           setIsLoading(false)
         }
       }
-
+  
       reader.readAsArrayBuffer(file)
     } catch (error) {
       console.error("Erreur lors du chargement du fichier:", error)

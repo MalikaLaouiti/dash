@@ -43,9 +43,9 @@ export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: 
         url: "#",
         year: year
       })) : [
-        { title: "2022-2023", url: "#", year: "2022" },
-        { title: "2023-2024", url: "#", year: "2023" },
-        { title: "2024-2025", url: "#", year: "2024" },
+        { title: "2022", url: "#", year: "2022" },
+        { title: "2023", url: "#", year: "2023" },
+        { title: "2024", url: "#", year: "2024" },
       ],
     },
     {
@@ -58,11 +58,16 @@ export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: 
       url: "#",
       icon: Building2,
     },
-    {
-      title: "Statistique",
-      url: "#",
-      icon: ChartNoAxesCombined,
-    },
+  {
+    title: "Statistique",
+    url: "#",
+    icon: ChartNoAxesCombined,
+  },
+  {
+    title: "Analyse",
+    url: "/analyse",
+    icon: ChartNoAxesCombined,
+  },
   ]
 
   return (
