@@ -21,40 +21,50 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible"
 
-const items = [
+interface AppSidebarProps {
+  selectedYear?: string
+  onYearSelect?: (year: string) => void
+  availableYears?: string[]
+}
+
+export function AppSidebar({ selectedYear, onYearSelect, availableYears = [] }: AppSidebarProps) {
+  const items = [
+    {
+      title: "Acceuil",
+      url: "/",
+      icon: Home,
+    },
+    {
+      title: "Année Universitaire",
+      url: "#",
+      icon: CalendarSearch,
+      children: availableYears.length > 0 ? availableYears.map(year => ({
+        title: year,
+        url: "#",
+        year: year
+      })) : [
+        { title: "2024", url: "#", year: "2024" },
+        { title: "2023", url: "#", year: "2023" },
+        { title: "2022", url: "#", year: "2022" },
+      ],
+    },
+    {
+      title: "Encadrent",
+      url: "/encadrant",
+      icon: UserStar,
+    },
+    {
+      title: "Sociéte",
+      url: "#",
+      icon: Building2,
+    },
   {
-    title: "Acceuil",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "Année Universitaire",
-    url: "#",
-    icon: CalendarSearch,
-    children: [
-      { title: "2022-2023", url: "/add-year" },
-      { title: "2023-2024", url: "/list-years" },
-      { title: "2024-2025", url: "/list-years" },
-    ],
-  },
-  {
-    title: "Encadrent",
-    url: "#",
-    icon: UserStar,
-  },
-  {
-    title: "Sociéte",
-    url: "#",
-    icon: Building2,
-  },
-  {
-    title: "Statistique",
-    url: "#",
+    title: "Analyse",
+    url: "/analyse",
     icon: ChartNoAxesCombined,
   },
-]
+  ]
 
-export function AppSidebar() {
   return (
         <Sidebar>
         <div className="p-4 border-b border-sidebar-border">
@@ -82,8 +92,19 @@ export function AppSidebar() {
                           <SidebarMenuSub>
                             {item.children?.map((child) => (
                               <SidebarMenuSubItem key={child.title}>
-                                <SidebarMenuSubButton asChild>
-                                  <a href={child.url}>{child.title}</a>
+                                <SidebarMenuSubButton 
+                                  asChild
+                                  className={selectedYear === child.year ? "bg-accent text-accent-foreground" : ""}
+                                >
+                                  <button 
+                                    onClick={() => onYearSelect?.(child.year || child.title)}
+                                    className="w-full text-left"
+                                  >
+                                    {child.title}
+                                    {selectedYear === child.year && (
+                                      <span className="ml-auto text-xs">✓</span>
+                                    )}
+                                  </button>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                             ))}
