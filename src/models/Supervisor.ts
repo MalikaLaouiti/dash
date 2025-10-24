@@ -1,17 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface Supervisor extends Document {
-  prenom: string;
-  email?: string;
-  telephone?: string;
-  nombreEtudiants: number;
-  annee: string;
-  categorie: "professionnel" | "academique";
-  createdAt: Date;
-  updatedAt: Date;
-}
+// export interface Supervisor extends Document {
+//   prenom: string;
+//   email?: string;
+//   telephone?: string;
+//   nombreEtudiants: number;
+//   annee: string;
+//   categorie: "professionnel" | "academique";
+//   createdAt: Date;
+//   updatedAt: Date;
+// }
 
-const SupervisorSchema = new Schema<Supervisor>({
+const SupervisorSchema = new Schema({
   prenom: { type: String, required: true },
   email: { type: String },
   telephone: { type: String },
@@ -28,4 +28,4 @@ SupervisorSchema.index({ categorie: 1 });
 SupervisorSchema.index({ prenom: 1 });
 SupervisorSchema.index({ nombreEtudiants: -1 });
 
-export default mongoose.models.Supervisor || mongoose.model<Supervisor>('Supervisor', SupervisorSchema);
+export default mongoose.models.Supervisor || mongoose.model('Supervisor', SupervisorSchema);
