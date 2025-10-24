@@ -1,3 +1,5 @@
+import {createStudent } from "@/app/api/student/route"
+
 export interface Student {
   codeProjet: string
   cin: number
@@ -432,7 +434,7 @@ export class ExcelParser {
   }
 
   
-  private static parseStudents(data: any[][], year: string): Student[] {
+  private async parseStudents(data: any[][], year: string): Promise<Student[]> {
     if (data.length < 2) return []
 
     const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
@@ -499,7 +501,8 @@ export class ExcelParser {
       }
 
       if (student.prenom || student.codeProjet) {
-        students.push(student)
+        students.push(student);
+        await createStudent(student);
       }
     }
 
