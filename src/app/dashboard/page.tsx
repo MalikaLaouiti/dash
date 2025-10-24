@@ -31,16 +31,16 @@ export default function DashHome() {
   
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
-    if (data.summary.yearsCovered.length > 0 && !selectedYear) {
-      setSelectedYear(data.summary.yearsCovered[0]);
-    }
+    // if (data.summary.yearsCovered.length > 0 && !selectedYear) {
+    //   setSelectedYear(data.summary.yearsCovered[0]);
+    // }
   };
 
   const handleYearSelect = (year: string) => {
     setSelectedYear(year);
   };
 
-  const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters, selectedYear || undefined) : [];
+  const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
 
   const dynamicTabs = useMemo((): TabConfig[] => {
     if (!parsedData) return [];
@@ -73,7 +73,7 @@ export default function DashHome() {
       {
         id: "supervisors-academic",
         label: "Encadreurs Académiques",
-        count: parsedData.summary.totalSupervisors.academiques,
+        count: parsedData.summary.totalSupervisors,
         content: (
           <DataTable 
             data={parsedData} 
@@ -85,7 +85,7 @@ export default function DashHome() {
       {
         id: "supervisors-professional",
         label: "Encadreurs Professionnels",
-        count: parsedData.summary.totalSupervisors.professionnels,
+        count: parsedData.summary.totalSupervisors,
         content: (
           <DataTable 
             data={parsedData} 
@@ -135,7 +135,7 @@ export default function DashHome() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Résumé des données importées
-                    <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors.academiques + parsedData.summary.totalSupervisors.professionnels} éléments</Badge>
+                    <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors + parsedData.summary.totalSupervisors} éléments</Badge>
                   </CardTitle>
                   <CardDescription>
                     Données extraites du fichier Excel et organisées par catégorie
@@ -152,11 +152,11 @@ export default function DashHome() {
                       <span className="text-sm">Entreprises</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline">{parsedData.summary.totalSupervisors.academiques}</Badge>
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
                       <span className="text-sm">Encadreurs Académiques</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline">{parsedData.summary.totalSupervisors.professionnels}</Badge>
+                      <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
                       <span className="text-sm">Encadreurs Professionnels</span>
                     </div>
                   </div>

@@ -5,32 +5,19 @@ import { connectDB } from '@/lib/mongodb';
 
 
 // GET - Get all students
-export async function GET(request: NextRequest) {
+
+export async function getStudents(){
   try {
     await connectDB();
-    
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    
     const students = await Student.find()
       .populate('company')
       .populate('academicSupervisor')
-      .populate('professionalSupervisor')
-      .skip((page - 1) * limit)
-      .limit(limit);
-    
-    const total = await Student.countDocuments();
-    
-    return NextResponse.json({
-      students,
-      pagination: { page, limit, total }
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch students' },
-      { status: 500 }
-    );
+      .populate('professionalSupervisor');
+    return students;
+  }
+  catch (error) {
+    console.error('Failed to fetch students:', error);
+    throw error;
   }
 }
 
@@ -42,6 +29,17 @@ export async function createStudent(studentData: any) {
     return student;
   } catch (error) {
     console.error('Failed to create student:', error);
+    throw error;
+  }
+}
+
+export async function createStudentsBatch(studentsData: any[]) {
+  try {
+    await connectDB();
+    const students = await Student.insertMany(studentsData, { ordered: false });
+    return students;
+  } catch (error) {
+    console.error('Failed to create students batch:', error);
     throw error;
   }
 }

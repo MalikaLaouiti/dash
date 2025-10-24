@@ -45,30 +45,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
   
           const parsedData = ExcelParser.parseExcelData(rawData)
   
-          
-          fetch('/api/save-data', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ rawExcelData: rawData }),
-          })
-            .then(saveResponse => {
-              if (saveResponse.ok) {
-                return saveResponse.json();
-              } else {
-                console.error('Erreur lors de la sauvegarde');
-              }
-            })
-            .then(saveResult => {
-              if (saveResult) {
-                console.log('Données sauvegardées:', saveResult);
-              }
-            })
-            .catch(saveError => {
-              console.error('Erreur lors de la sauvegarde:', saveError);
-            });
-  
           onDataLoad(parsedData)
           // console.log("Données Excel importées:", parsedData)
           setUploadStatus("success")
