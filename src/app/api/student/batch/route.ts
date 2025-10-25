@@ -4,16 +4,16 @@ import { connectDB } from '@/lib/mongodb';
 import Student from '@/models/Student';
 
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
+const DELAY_BETWEEN_BATCHES = 100;
 
 export async function POST(request: NextRequest) {
   try {
     const { students } = await request.json();
-    console.log(students)
 
     if (!students || !Array.isArray(students) || students.length === 0) {
       return NextResponse.json(
-        { error: 'No companies provided' },
+        { error: 'No students provided' },
         { status: 400 }
       );
     }
@@ -22,10 +22,11 @@ export async function POST(request: NextRequest) {
 
     let totalInserted = 0;
     let totalFailed = 0;
+    
 
     for (let i = 0; i < students.length; i += BATCH_SIZE) {
       const batch = students.slice(i, i + BATCH_SIZE);
-
+  
       try {
         const result = await Student.insertMany(batch, { 
           ordered: false,
@@ -58,4 +59,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  const students = await Student.find().limit(1000);
+  return NextResponse.json({ students });
 }

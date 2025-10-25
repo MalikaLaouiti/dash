@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     if (!supervisors || !Array.isArray(supervisors) || supervisors.length === 0) {
       return NextResponse.json(
-        { error: 'No companies provided' },
+        { error: 'No supervisors provided' },
         { status: 400 }
       );
     }

@@ -90,6 +90,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
         const result = await response.json();
         results.students = result.data;
         console.log(`Étudiants: ${result.data.inserted}/${result.data.total} insérés`);
+        console.log(result);
       }
 
       // Save companies
