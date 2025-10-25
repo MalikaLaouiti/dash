@@ -35,7 +35,7 @@ import Company from './Company';
 
 const StudentSchema = new Schema({
   codeProjet: { type: String, required: true },
-  cin: { type: Number, required: true },
+  cin: { type: Number, required: true ,unique:true},
   prenom: { type: String, required: true },
   email: { type: String },
   telephone: { type: String },

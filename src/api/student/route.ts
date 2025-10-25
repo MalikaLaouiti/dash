@@ -2,9 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Student from '@/models/Student';
 import { connectDB } from '@/lib/mongodb';
+import { StudentDTO } from '@/dto/student.dto';
+import { serializeMongoDoc } from '@/lib/serializers';
 
-
-// GET - Get all students
 
 export async function getStudents(){
   try {
@@ -13,7 +13,7 @@ export async function getStudents(){
       .populate('company')
       .populate('academicSupervisor')
       .populate('professionalSupervisor');
-    return students;
+    return serializeMongoDoc(students);
   }
   catch (error) {
     console.error('Failed to fetch students:', error);
@@ -21,12 +21,11 @@ export async function getStudents(){
   }
 }
 
-// POST - Create new student
-export async function createStudent(studentData: any) {
+export async function createStudent(studentData: any) : Promise<StudentDTO>{
   try {
     await connectDB();
     const student = await Student.create(studentData);
-    return student;
+    return serializeMongoDoc(student);
   } catch (error) {
     console.error('Failed to create student:', error);
     throw error;
@@ -37,7 +36,7 @@ export async function createStudentsBatch(studentsData: any[]) {
   try {
     await connectDB();
     const students = await Student.insertMany(studentsData, { ordered: false });
-    return students;
+    return serializeMongoDoc(students);
   } catch (error) {
     console.error('Failed to create students batch:', error);
     throw error;

@@ -2,16 +2,18 @@
 
 import { connectDB } from '@/lib/mongodb';
 import Supervisor from '@/models/Supervisor';
+import { serializeMongoDoc } from '@/lib/serializers';
+import { SupervisorDTO } from '@/dto/supervisoor.dto';
 
 
 // GET - Get all students
 
-export async function getSupervisor(){
+export async function getSupervisor(): Promise<SupervisorDTO[]> {
   try {
     await connectDB();
     const supervisor = await Supervisor.find()
       .populate('company')
-    return supervisor;
+    return serializeMongoDoc(supervisor);
   }
   catch (error) {
     console.error('Failed to fetch supervisors:', error);
@@ -20,22 +22,22 @@ export async function getSupervisor(){
 }
 
 // POST - Create new supervisor
-export async function createSupervisor(supervisorData: any) {
+export async function createSupervisor(supervisorData: any): Promise<SupervisorDTO> {
   try {
     await connectDB();
     const supervisor = await Supervisor.create(supervisorData);
-    return supervisor;
+    return serializeMongoDoc(supervisor)
   } catch (error) {
     console.error('Failed to create supervisor:', error);
     throw error;
   }
 }
 
-export async function createSupervisorsBatch(supervisorsData: any[]) {
+export async function createSupervisorsBatch(supervisorsData: any[]):Promise<SupervisorDTO[]> {
   try {
     await connectDB();
     const supervisor = await Supervisor.insertMany(supervisorsData, { ordered: false });
-    return supervisor;
+    return serializeMongoDoc(supervisor);
   } catch (error) {
     console.error('Failed to create supervisors batch:', error);
     throw error;
