@@ -18,11 +18,11 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-  
+
     setIsLoading(true)
     setFileName(file.name)
     setUploadStatus("idle")
-  
+
     try {
       const XLSX = await import("xlsx")
       const reader = new FileReader()
@@ -30,22 +30,23 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer)
           const workbook = XLSX.read(data, { type: "array" })
-  
+
           const sheets: any = {}
           workbook.SheetNames.forEach((sheetName) => {
             const worksheet = workbook.Sheets[sheetName]
             sheets[sheetName] = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
           })
-  
+
           const rawData = {
             sheets,
             sheetNames: workbook.SheetNames,
             fileName: file.name,
           }
-  
+
           const parsedData = ExcelParser.parseExcelData(rawData)
-  
+          saveToDatabase(parsedData);
           onDataLoad(parsedData)
+
           // console.log("Données Excel importées:", parsedData)
           setUploadStatus("success")
         } catch (error) {
@@ -55,12 +56,104 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
           setIsLoading(false)
         }
       }
-  
+      
       reader.readAsArrayBuffer(file)
     } catch (error) {
       console.error("Erreur lors du chargement du fichier:", error)
       setIsLoading(false)
       setUploadStatus("error")
+    }
+  }
+  const saveToDatabase = async (parsedData: ParsedExcelData) => {
+    const results = {
+      students: { inserted: 0, failed: 0, total: 0 },
+      companies: { inserted: 0, failed: 0, total: 0 },
+      supervisors: { inserted: 0, failed: 0, total: 0 },
+    };
+
+    try {
+      // Save students
+      if (parsedData.students.length > 0) {
+        console.log(`Enregistrement de ${parsedData.students.length} étudiants...`);
+
+        const response = await fetch("/api/student/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ students: parsedData.students }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Erreur lors de l'insertion des étudiants");
+        }
+
+        const result = await response.json();
+        results.students = result.data;
+        console.log(`Étudiants: ${result.data.inserted}/${result.data.total} insérés`);
+      }
+
+      // Save companies
+      if (parsedData.companies.length > 0) {
+        console.log(`Enregistrement de ${parsedData.companies.length} entreprises...`);
+
+        const response = await fetch("/api/company/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companies: parsedData.companies }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("Erreur entreprises:", error);
+          // Don't throw - continue with supervisors
+        } else {
+          const result = await response.json();
+          results.companies = result.data;
+          console.log(`Entreprises: ${result.data.inserted}/${result.data.total} insérées`);
+        }
+      }
+
+      // Save supervisors
+      if (parsedData.supervisors.length > 0) {
+        console.log(`Enregistrement de ${parsedData.supervisors.length} superviseurs...`);
+
+        const response = await fetch("/api/supervisor/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ supervisors: parsedData.supervisors }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("Erreur superviseurs:", error);
+          // Don't throw - at least some data was saved
+        } else {
+          const result = await response.json();
+          results.supervisors = result.data;
+          console.log(`Superviseurs: ${result.data.inserted}/${result.data.total} insérés`);
+        }
+      }
+
+      // Log summary
+      console.log("Résumé de l'import:", {
+        étudiants: `${results.students.inserted}/${results.students.total}`,
+        entreprises: `${results.companies.inserted}/${results.companies.total}`,
+        superviseurs: `${results.supervisors.inserted}/${results.supervisors.total}`,
+      });
+
+      // Check if any insertions failed completely
+      const totalExpected = parsedData.students.length + parsedData.companies.length + parsedData.supervisors.length;
+      const totalInserted = results.students.inserted + results.companies.inserted + results.supervisors.inserted;
+
+      if (totalInserted === 0 && totalExpected > 0) {
+        throw new Error("Aucune donnée n'a pu être enregistrée");
+      }
+
+      return results;
+
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement:", error);
+      throw error;
     }
   }
 

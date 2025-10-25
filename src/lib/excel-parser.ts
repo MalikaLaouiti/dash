@@ -1,6 +1,6 @@
-import { createStudentsBatch } from '@/api/student/route';
-import { createCompaniesBatch } from '@/api/company/route';
-import { createSupervisorsBatch } from '@/api/supervisor/route';
+import { createStudentsBatch } from '@/app/api/student/route';
+import { createCompaniesBatch } from '@/app/api/company/route';
+import { createSupervisorsBatch } from '@/app/api/supervisor/route';
 import { StudentDTO } from '@/dto/student.dto';
 import { SupervisorDTO } from '@/dto/supervisor.dto';
 import {CompanyDTO} from '@/dto/company.dto'; 
@@ -231,12 +231,12 @@ export class ExcelParser {
         telephone: indices.telephone >= 0 ? this.cleanString(row[indices.telephone]) || undefined : undefined,
       };
 
-      // // Éviter les doublons basés sur le nom
-      // const companyKey = `${company.nom.toLowerCase()}_${year}`;
-      // if (company.nom && !seenCompanies.has(companyKey)) {
-      //   companies.push(company);
-      //   seenCompanies.add(companyKey);
-      // }
+      // Éviter les doublons basés sur le nom
+      const companyKey = `${company.nom.toLowerCase()}_${year}`;
+      if (company.nom && !seenCompanies.has(companyKey)) {
+        companies.push(company);
+        seenCompanies.add(companyKey);
+      }
     }
 
     return companies;
