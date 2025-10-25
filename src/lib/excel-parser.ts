@@ -1,6 +1,9 @@
 import { createStudentsBatch } from '@/api/student/route';
 import { createCompaniesBatch } from '@/api/company/route';
 import { createSupervisorsBatch } from '@/api/supervisor/route';
+import { StudentDTO } from '@/dto/student.dto';
+import { SupervisorDTO } from '@/dto/supervisor.dto';
+import {CompanyDTO} from '@/dto/company.dto'; 
 
 export interface Student {
   codeProjet: string;
@@ -43,9 +46,9 @@ export interface Supervisor {
 }
 
 export interface ParsedExcelData {
-  students: Student[];
-  companies: Company[];
-  supervisors: Supervisor[];
+  students: StudentDTO[];
+  companies: CompanyDTO[];
+  supervisors: SupervisorDTO[];
   summary: {
     totalStudents: number;
     totalCompanies: number;
@@ -95,18 +98,14 @@ export class ExcelParser {
     }
   };
 
-  /**
-   * Trouve l'index d'une colonne basé sur des alias
-   */
+
   private static findColumnIndex(headers: string[], aliases: string[]): number {
     return headers.findIndex(header => 
       aliases.some(alias => header.includes(alias))
     );
   }
 
-  /**
-   * Extrait les indices de colonnes pour un type de données
-   */
+
   private static extractColumnIndices(headers: string[], type: keyof typeof ExcelParser.HEADER_MAPPINGS) {
     const indices: Record<string, number> = {};
     const mappings = ExcelParser.HEADER_MAPPINGS[type];
@@ -118,9 +117,7 @@ export class ExcelParser {
     return indices;
   }
 
-  /**
-   * Parse une valeur de date de manière sécurisée
-   */
+
   private static parseDate(dateValue: any): Date | undefined {
     if (!dateValue) return undefined;
     
@@ -135,17 +132,13 @@ export class ExcelParser {
     return isNaN(date.getTime()) ? undefined : date;
   }
 
-  /**
-   * Nettoie et normalise une valeur string
-   */
+
   private static cleanString(value: any): string {
     if (value == null) return '';
     return String(value).trim();
   }
 
-  /**
-   * Nettoie et normalise une valeur numérique
-   */
+
   private static cleanNumber(value: any): number {
     if (value == null) return 0;
     
@@ -153,21 +146,18 @@ export class ExcelParser {
     return isNaN(num) ? 0 : num;
   }
 
-  /**
-   * Parse les étudiants depuis les données Excel
-   */
-  private static parseStudents(data: any[][], year: string): Student[] {
+  private static parseStudents(data: any[][], year: string): StudentDTO[] {
     if (data.length < 2) return [];
 
     const headers = data[0].map(h => this.cleanString(h).toLowerCase());
     const indices = this.extractColumnIndices(headers, 'students');
-    const students: Student[] = [];
+    const students: StudentDTO[] = [];
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if (!row || row.length === 0) continue;
 
-      const student: Student = {
+      const student: StudentDTO = {
         codeProjet: indices.codeProject >= 0 ? this.cleanString(row[indices.codeProject]) : '',
         cin: indices.cin >= 0 ? this.cleanNumber(row[indices.cin]) : 0,
         prenom: indices.prenom >= 0 ? this.cleanString(row[indices.prenom]) : '',
@@ -182,8 +172,8 @@ export class ExcelParser {
         encadreurAcId: indices.encadreurAc >= 0 ? this.cleanString(row[indices.encadreurAc]) || undefined : undefined,
         encadreurProId: indices.encadreurPro >= 0 ? this.cleanString(row[indices.encadreurPro]) || undefined : undefined,
         dureeStage: indices.dureeStage >= 0 ? this.cleanString(row[indices.dureeStage]) || undefined : undefined,
-        debutStage: indices.debutStage >= 0 ? this.parseDate(row[indices.debutStage]) : undefined,
-        finStage: indices.finStage >= 0 ? this.parseDate(row[indices.finStage]) : undefined,
+        debutStage: indices.debutStage >= 0 ? this.parseDate(row[indices.debutStage])?.toString() : undefined,
+        finStage: indices.finStage >= 0 ? this.parseDate(row[indices.finStage])?.toString() : undefined,
         collaboration: this.determineCollaboration(row, indices.collaboration),
         ficheInformation: indices.ficheInformation >= 0 ? this.cleanString(row[indices.ficheInformation]) || undefined : undefined,
         cahierCharge: indices.cahierCharge >= 0 ? this.cleanString(row[indices.cahierCharge]) || undefined : undefined,
@@ -197,9 +187,6 @@ export class ExcelParser {
     return students;
   }
 
-  /**
-   * Détermine le type de localisation
-   */
   private static determineLocalisationType(row: any[], index: number): "interne" | "externe" | undefined {
     if (index < 0) return undefined;
     
@@ -207,9 +194,7 @@ export class ExcelParser {
     return value.includes("interne") ? "interne" : "externe";
   }
 
-  /**
-   * Détermine le type de collaboration
-   */
+
   private static determineCollaboration(row: any[], index: number): "binome" | "monome" {
     if (index < 0) return "monome";
     
@@ -217,29 +202,26 @@ export class ExcelParser {
     return value.includes("binôme") || value.includes("binome") ? "binome" : "monome";
   }
 
-  /**
-   * Valide qu'un étudiant a les données minimales requises
-   */
-  private static isValidStudent(student: Student): boolean {
+
+  private static isValidStudent(student: StudentDTO): boolean {
     return !!(student.prenom && student.codeProjet && student.cin);
   }
 
-  /**
-   * Parse les entreprises depuis les données Excel
-   */
-  private static parseCompanies(data: any[][], year: string): Company[] {
+  
+  private static parseCompanies(data: any[][], year: string): CompanyDTO[] {
     if (data.length < 2) return [];
 
     const headers = data[0].map(h => this.cleanString(h).toLowerCase());
     const indices = this.extractColumnIndices(headers, 'companies');
-    const companies: Company[] = [];
+    const companies: CompanyDTO[] = [];
     const seenCompanies = new Set<string>();
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if (!row || row.length === 0) continue;
 
-      const company: Company = {
+      const company: CompanyDTO = {
+        _id: '',
         nom: indices.nom >= 0 ? this.cleanString(row[indices.nom]) : '',
         secteur: indices.secteur >= 0 ? this.cleanString(row[indices.secteur]) : '',
         annee: year,
@@ -249,26 +231,24 @@ export class ExcelParser {
         telephone: indices.telephone >= 0 ? this.cleanString(row[indices.telephone]) || undefined : undefined,
       };
 
-      // Éviter les doublons basés sur le nom
-      const companyKey = `${company.nom.toLowerCase()}_${year}`;
-      if (company.nom && !seenCompanies.has(companyKey)) {
-        companies.push(company);
-        seenCompanies.add(companyKey);
-      }
+      // // Éviter les doublons basés sur le nom
+      // const companyKey = `${company.nom.toLowerCase()}_${year}`;
+      // if (company.nom && !seenCompanies.has(companyKey)) {
+      //   companies.push(company);
+      //   seenCompanies.add(companyKey);
+      // }
     }
 
     return companies;
   }
 
-  /**
-   * Parse les superviseurs depuis les données Excel
-   */
-  private static parseSupervisors(data: any[][], year: string): Supervisor[] {
+  
+  private static parseSupervisors(data: any[][], year: string): SupervisorDTO[] {
     if (data.length < 2) return [];
 
     const headers = data[0].map(h => this.cleanString(h).toLowerCase());
     const indices = this.extractColumnIndices(headers, 'supervisors');
-    const supervisors: Supervisor[] = [];
+    const supervisors: SupervisorDTO[] = [];
     const seenSupervisors = new Set<string>();
 
     for (let i = 1; i < data.length; i++) {
@@ -279,7 +259,8 @@ export class ExcelParser {
       if (indices.prenomAc >= 0) {
         const prenomAc = this.cleanString(row[indices.prenomAc]);
         if (prenomAc) {
-          const supervisor: Supervisor = {
+          const supervisor: SupervisorDTO = {
+            _id: '',
             prenom: prenomAc,
             annee: year,
             email: indices.emailAc >= 0 ? this.cleanString(row[indices.emailAc]) || undefined : undefined,
@@ -299,7 +280,8 @@ export class ExcelParser {
       if (indices.prenomPro >= 0) {
         const prenomPro = this.cleanString(row[indices.prenomPro]);
         if (prenomPro) {
-          const supervisor: Supervisor = {
+          const supervisor: SupervisorDTO = {
+            _id: '',
             prenom: prenomPro,
             annee: year,
             email: indices.emailPro >= 0 ? this.cleanString(row[indices.emailPro]) || undefined : undefined,
@@ -319,13 +301,11 @@ export class ExcelParser {
     return supervisors;
   }
 
-  /**
-   * Parse les données Excel principales
-   */
+ 
   static parseExcelData(rawExcelData: any): ParsedExcelData {
-    const students: Student[] = [];
-    const companies: Company[] = [];
-    const supervisors: Supervisor[] = [];
+    const students: StudentDTO[] = [];
+    const companies: CompanyDTO[] = [];
+    const supervisors: SupervisorDTO[] = [];
     const yearsCovered: Set<string> = new Set();
 
     if (!rawExcelData?.sheets) {
@@ -346,7 +326,7 @@ export class ExcelParser {
     }
 
     // Sauvegarder dans la base de données
-    this.saveToDatabase(students, companies, supervisors);
+    // this.saveToDatabase(students, companies, supervisors);
 
     return {
       students,
@@ -361,17 +341,11 @@ export class ExcelParser {
     };
   }
 
-  /**
-   * Extrait l'année du nom de la feuille
-   */
   private static extractYearFromSheetName(sheetName: string): string {
     const yearMatch = sheetName.match(/20\d{2}/);
     return yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
   }
 
-  /**
-   * Crée un résultat vide
-   */
   private static createEmptyResult(): ParsedExcelData {
     return {
       students: [],
@@ -389,42 +363,42 @@ export class ExcelParser {
   /**
    * Sauvegarde les données dans la base de données
    */
-  private static async saveToDatabase(
-    students: Student[], 
-    companies: Company[], 
-    supervisors: Supervisor[]
+  // private static async saveToDatabase(
+  //   students: Student[], 
+  //   companies: Company[], 
+  //   supervisors: Supervisor[]
     
-  ): Promise<void> {
-    try {
-      console.log('students to save:', students.length);
-      console.log('companies to save:', companies.length);
-      console.log('supervisors to save:', supervisors.length);
-      if (students.length > 0) {
-        if (await createStudentsBatch(students)){
-          console.log('Students saved successfully');
-        }
-        else{
-          console.log('No students were saved');
-        }
-      }
-      if (companies.length > 0) {
-        if( await createCompaniesBatch(companies)){
-          console.log('Companies saved successfully');
-        }else{
-          console.log('No companies were saved');
-        }
-      }
-      if (supervisors.length > 0) {
-        if (await createSupervisorsBatch(supervisors))
-        {
-          console.log('Supervisors saved successfully');
-        }else{
-          console.log('No supervisors were saved');
-        }
-      }
-    } catch (error) {
-      console.error('Error saving to database:', error);
-      throw error;
-    }
-  }
+  // ): Promise<void> {
+  //   try {
+  //     console.log('students to save:', students.length);
+  //     console.log('companies to save:', companies.length);
+  //     console.log('supervisors to save:', supervisors.length);
+  //     if (students.length > 0) {
+  //       if (await createStudentsBatch(students)){
+  //         console.log('Students saved successfully');
+  //       }
+  //       else{
+  //         console.log('No students were saved');
+  //       }
+  //     }
+  //     if (companies.length > 0) {
+  //       if( await createCompaniesBatch(companies)){
+  //         console.log('Companies saved successfully');
+  //       }else{
+  //         console.log('No companies were saved');
+  //       }
+  //     }
+  //     if (supervisors.length > 0) {
+  //       if (await createSupervisorsBatch(supervisors))
+  //       {
+  //         console.log('Supervisors saved successfully');
+  //       }else{
+  //         console.log('No supervisors were saved');
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving to database:', error);
+  //     throw error;
+  //   }
+  // }
 }

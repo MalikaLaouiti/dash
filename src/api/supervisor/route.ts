@@ -3,7 +3,7 @@
 import { connectDB } from '@/lib/mongodb';
 import Supervisor from '@/models/Supervisor';
 import { serializeMongoDoc } from '@/lib/serializers';
-import { SupervisorDTO } from '@/dto/supervisoor.dto';
+import { SupervisorDTO } from '@/dto/supervisor.dto';
 
 
 // GET - Get all students

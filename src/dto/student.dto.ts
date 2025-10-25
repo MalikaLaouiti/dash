@@ -1,5 +1,4 @@
 export interface StudentDTO {
-  _id: string;
   codeProjet: string;
   cin: number;
   prenom: string;
