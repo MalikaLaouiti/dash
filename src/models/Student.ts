@@ -44,29 +44,27 @@ const StudentSchema = new Schema({
   titreProjet: { type: String },
   score: { type: Number },
   companyId: { 
-    type: SchemaTypes.ObjectId,
-    ref: 'Company'
+    type: String
    },
   localisation_type: { type: String, enum: ["interne", "externe"] },
   encadreurAcId: { 
-    type: SchemaTypes.ObjectId,
-    ref:"Supervisor"
+    type: String
    },
   encadreurProId: { 
-    type: SchemaTypes.ObjectId,
-    ref:"Supervisor" },
+    type: String
+    },
   dureeStage: { type: String },
   debutStage: { type: Date },
   finStage: { type: Date },
   collaboration: { type: String, enum: ["binome", "monome"], required: true },
   collaborateur: {
-    type:SchemaTypes.ObjectId, 
-    ref: 'Student',
+    type:String
   },
   ficheInformation: { type: String },
   cahierCharge: { type: String }
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'students'
 });
 
 // Index pour optimiser les requêtes
@@ -75,5 +73,11 @@ StudentSchema.index({ cin: 1 });
 StudentSchema.index({ score: -1 });
 StudentSchema.index({ encadreurAcId: 1 });
 StudentSchema.index({ encadreurProId: 1 });
+
+console.log('📝 Student model created for collection:', StudentSchema.get('collection'));
+if (process.env.NODE_ENV === 'development' && mongoose.models.Student) {
+  delete mongoose.models.Student;
+}
+
 
 export default mongoose.models.Student || mongoose.model('Student', StudentSchema);

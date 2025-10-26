@@ -1,5 +1,4 @@
 export interface CompanyDTO {
-  _id: string;
   nom: string;
   secteur: string;
   adresse?: string;

@@ -32,8 +32,7 @@ const CompanySchema = new Schema({
   telephone: { type: String },
   nombreStagiaires: { type: Number, default: 0 },
   encadrantPro: [{
-    type: SchemaTypes.ObjectId,
-    ref:"Supervisor",
+    type: String
   }]
 }, {
   timestamps: true
@@ -43,5 +42,7 @@ const CompanySchema = new Schema({
 CompanySchema.index({ annee: 1 });
 CompanySchema.index({ nom: 1 });
 CompanySchema.index({ secteur: 1 });
-
+if (process.env.NODE_ENV === 'development' && mongoose.models.Company) {
+  delete mongoose.models.Company;
+}
 export default mongoose.models.Company || mongoose.model('Company', CompanySchema);

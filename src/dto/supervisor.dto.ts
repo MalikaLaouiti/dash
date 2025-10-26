@@ -1,5 +1,4 @@
 export interface SupervisorDTO {
-  _id: string;
   prenom: string;
   email?: string;
   telephone?: string;

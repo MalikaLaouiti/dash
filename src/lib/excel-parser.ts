@@ -5,45 +5,45 @@ import { StudentDTO } from '@/dto/student.dto';
 import { SupervisorDTO } from '@/dto/supervisor.dto';
 import {CompanyDTO} from '@/dto/company.dto'; 
 
-export interface Student {
-  codeProjet: string;
-  cin: number;
-  prenom: string;
-  email?: string;
-  telephone?: string;
-  filiere: string;
-  annee: string;
-  titreProjet?: string;
-  score?: number;
-  companyId?: string;
-  localisation_type?: "interne" | "externe";
-  encadreurAcId?: string;
-  encadreurProId?: string;
-  dureeStage?: string;
-  debutStage?: Date;
-  finStage?: Date;
-  collaboration: "binome" | "monome";
-  ficheInformation?: string;
-  cahierCharge?: string;
-}
+// export interface Student {
+//   codeProjet: string;
+//   cin: number;
+//   prenom: string;
+//   email?: string;
+//   telephone?: string;
+//   filiere: string;
+//   annee: string;
+//   titreProjet?: string;
+//   score?: number;
+//   companyId?: string;
+//   localisation_type?: "interne" | "externe";
+//   encadreurAcId?: string;
+//   encadreurProId?: string;
+//   dureeStage?: string;
+//   debutStage?: Date;
+//   finStage?: Date;
+//   collaboration: "binome" | "monome";
+//   ficheInformation?: string;
+//   cahierCharge?: string;
+// }
 
-export interface Company {
-  nom: string;
-  secteur: string;
-  adresse?: string;
-  contact?: string;
-  email?: string;
-  telephone?: string;
-  annee: string;
-}
+// export interface Company {
+//   nom: string;
+//   secteur: string;
+//   adresse?: string;
+//   contact?: string;
+//   email?: string;
+//   telephone?: string;
+//   annee: string;
+// }
 
-export interface Supervisor {
-  prenom: string;
-  email?: string;
-  telephone?: string;
-  annee: string;
-  categorie: "professionnel" | "academique";
-}
+// export interface Supervisor {
+//   prenom: string;
+//   email?: string;
+//   telephone?: string;
+//   annee: string;
+//   categorie: "professionnel" | "academique";
+// }
 
 export interface ParsedExcelData {
   students: StudentDTO[];
@@ -221,7 +221,6 @@ export class ExcelParser {
       if (!row || row.length === 0) continue;
 
       const company: CompanyDTO = {
-        _id: '',
         nom: indices.nom >= 0 ? this.cleanString(row[indices.nom]) : '',
         secteur: indices.secteur >= 0 ? this.cleanString(row[indices.secteur]) : '',
         annee: year,
@@ -260,7 +259,6 @@ export class ExcelParser {
         const prenomAc = this.cleanString(row[indices.prenomAc]);
         if (prenomAc) {
           const supervisor: SupervisorDTO = {
-            _id: '',
             prenom: prenomAc,
             annee: year,
             email: indices.emailAc >= 0 ? this.cleanString(row[indices.emailAc]) || undefined : undefined,
@@ -281,7 +279,6 @@ export class ExcelParser {
         const prenomPro = this.cleanString(row[indices.prenomPro]);
         if (prenomPro) {
           const supervisor: SupervisorDTO = {
-            _id: '',
             prenom: prenomPro,
             annee: year,
             email: indices.emailPro >= 0 ? this.cleanString(row[indices.emailPro]) || undefined : undefined,

@@ -1,11 +1,13 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/academic-dashboard';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+  throw new Error('Please define MONGODB_URI in .env');
 }
 
+// ✅ Add detailed logging
+console.log('🔗 MongoDB URI (masked):', MONGODB_URI?.replace(/:[^:]*@/, ':****@'));
 
 let cached = (global as any).mongoose;
 
@@ -15,6 +17,9 @@ if (!cached) {
 
 export async function connectDB() {
   if (cached.conn) {
+    console.log('✅ Using cached connection');
+    console.log('   Database:', cached.conn.connection.name);
+    console.log('   State:', cached.conn.connection.readyState);
     return cached.conn;
   }
 
@@ -23,8 +28,17 @@ export async function connectDB() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    console.log('🔄 Creating new MongoDB connection...');
+    
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+      console.log('✅ MongoDB connected successfully');
+      console.log('   Database:', mongoose.connection.name);
+      console.log('   Host:', mongoose.connection.host);
+      console.log('   Port:', mongoose.connection.port);
       return mongoose;
+    }).catch((error) => {
+      console.error('❌ MongoDB connection error:', error);
+      throw error;
     });
   }
 
@@ -37,5 +51,3 @@ export async function connectDB() {
 
   return cached.conn;
 }
-
-
