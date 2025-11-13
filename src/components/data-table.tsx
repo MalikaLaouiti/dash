@@ -10,7 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { ExcelParser, type ParsedExcelData, type Student, type Company, type Supervisor } from "@/lib/excel-parser"
+import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser"
+import { StudentDTO } from "@/dto/student.dto"
+import {CompanyDTO} from "@/dto/company.dto"
+import { SupervisorDTO } from "@/dto/supervisor.dto"
 import { Calendar } from "lucide-react"
 
 interface DataTableProps {
@@ -34,7 +37,7 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
     return items.filter(item => item.annee === selectedYear)
   }
 
-  const renderStudentRow = (student: Student) => (
+  const renderStudentRow = (student: StudentDTO) => (
     <TableRow key={student.cin+student.annee+student.codeProjet}>
       <TableCell>{student.codeProjet}</TableCell>
       <TableCell className="font-medium">{student.prenom}</TableCell>
@@ -43,7 +46,7 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
       <TableCell>{student.score}</TableCell>
       <TableCell>{student.titreProjet}</TableCell>
       <TableCell>{student.collaboration}</TableCell>
-      <TableCell>{student.collaborateur?.prenom|| ""}</TableCell>
+      <TableCell>{student.collaborateur|| ""}</TableCell>
       <TableCell>{student.annee}</TableCell>
       <TableCell>{student.companyId || "N/A"}</TableCell>
       <TableCell>{student.encadreurAcId || "N/A"}</TableCell>
@@ -59,8 +62,8 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
     </TableRow>
   )
 
-  const renderCompanyRow = (company: Company) => (
-    <TableRow key={company.id}>
+  const renderCompanyRow = (company: CompanyDTO) => (
+    <TableRow key={company.nom+company.annee}>
       <TableCell className="font-medium">{company.nom}</TableCell>
       <TableCell>{company.secteur}</TableCell>
       <TableCell>{company.annee}</TableCell>
@@ -74,8 +77,8 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
     </TableRow>
   )
 
-  const renderSupervisorRow = (supervisor: Supervisor) => (
-    <TableRow key={supervisor.id}>
+  const renderSupervisorRow = (supervisor: SupervisorDTO) => (
+    <TableRow key={supervisor.prenom+supervisor.annee}>
       <TableCell className="font-medium">{supervisor.prenom}</TableCell>
       <TableCell>{supervisor.prenom}</TableCell>
       <TableCell>{supervisor.categorie}</TableCell>

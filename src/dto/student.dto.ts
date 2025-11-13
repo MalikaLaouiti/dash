@@ -16,6 +16,7 @@ export interface StudentDTO {
   debutStage?: string;
   finStage?: string;
   collaboration: "binome" | "monome";
+  collaborateur?: string;
   ficheInformation?: string;
   cahierCharge?: string;
   createdAt?: string;
