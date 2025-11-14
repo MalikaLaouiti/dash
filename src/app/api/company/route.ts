@@ -1,5 +1,4 @@
 "use server";
-import { NextRequest, NextResponse } from 'next/server';
 import Company from '@/models/Company';
 import { connectDB } from '@/lib/mongodb';
 import { CompanyDTO } from '@/dto/company.dto';

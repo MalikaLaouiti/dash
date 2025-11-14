@@ -9,4 +9,5 @@ export interface CompanyDTO {
   nombreStagiaires?: number;
   createdAt?: string;
   updatedAt?: string;
+
 }

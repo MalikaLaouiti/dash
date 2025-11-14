@@ -74,7 +74,7 @@ StudentSchema.index({ score: -1 });
 StudentSchema.index({ encadreurAcId: 1 });
 StudentSchema.index({ encadreurProId: 1 });
 
-console.log('📝 Student model created for collection:', StudentSchema.get('collection'));
+console.log(' Student model created for collection:', StudentSchema.get('collection'));
 if (process.env.NODE_ENV === 'development' && mongoose.models.Student) {
   delete mongoose.models.Student;
 }

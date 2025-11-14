@@ -3,187 +3,275 @@ import { connectDB } from '@/lib/mongodb';
 import Company from '@/models/Company';
 import mongoose from 'mongoose';
 
-const BATCH_SIZE = 100;
+const logger = {
+  error: (context: string, error: any, metadata?: any) => {
+    console.error(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'ERROR',
+      context,
+      error: {
+        message: error.message,
+        code: error.code,
+        name: error.name
+      },
+      metadata,
+      environment: process.env.NODE_ENV
+    }));
+  },
+  info: (context: string, message: string, metadata?: any) => {
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'INFO',
+      context,
+      message,
+      metadata,
+      environment: process.env.NODE_ENV
+    }));
+  }
+};
 
 export async function POST(request: NextRequest) {
-  try {
-    const { companies } = await request.json();
-    
+  let totalInserted = 0;
+  let totalUpdated = 0;
+  let totalFailed = 0;
+  let totalDuplicates = 0;
+  const insertedIds: string[] = [];
+  const updatedEmails: string[] = [];
+  const errors: any[] = [];
 
-    if (!companies || !Array.isArray(companies) || companies.length === 0) {
+  try {
+    const { companies: rawCompanies } = await request.json();
+
+    if (!rawCompanies || !Array.isArray(rawCompanies) || rawCompanies.length === 0) {
       return NextResponse.json(
-        { error: 'No companies provided' },
+        { 
+          success: false,
+          error: 'Companies array is required and cannot be empty'
+        },
         { status: 400 }
       );
     }
 
-    
-
     await connectDB();
-   
 
-    let totalInserted = 0;
-    let totalFailed = 0;
-    const errors: any[] = [];
-    const insertedIds: any[] = [];
+    const BATCH_SIZE = 100;
 
-    for (let i = 0; i < companies.length; i += BATCH_SIZE) {
-      const batch = companies.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < rawCompanies.length; i += BATCH_SIZE) {
+      const batch = rawCompanies.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
-     
-
       try {
-       
-        const result = await Company.insertMany(batch, { 
-          ordered: false,
+        // Créer des clés uniques combinant nom + année
+        const companyKeys = batch.map(company => ({
+          nom: company.nom.toLowerCase(),
+          annee: company.annee
+        }));
+
+        // Chercher les entreprises existantes avec même nom ET même année
+        const existingCompanies = await Company.find(
+          {
+            $or: companyKeys.map(ck => ({
+              nom: ck.nom,
+              annee: ck.annee
+            }))
+          },
+          { nom: 1, _id: 1, annee: 1, nombreStagiaires: 1 }
+        ).lean();
+
+        // Map avec clé composite "nom-annee"
+        const existingNomsMap = new Map(
+          existingCompanies.map(ec => [
+            `${ec.nom}-${ec.annee}`, 
+            { 
+              id: ec._id, 
+              currentCount: ec.nombreStagiaires || 0 
+            }
+          ])
+        );
+
+        // SOLUTION CORRECTE: Séparer les opérations selon le cas
+        const bulkOperations = batch.map(company => {
+          const nom = company.nom.toLowerCase();
+          const companyKey = `${nom}-${company.annee}`;
+          const existingCompany = existingNomsMap.get(companyKey);
+          const isDuplicate = !!existingCompany;
+
+          if (isDuplicate) {
+            totalDuplicates++;
+            updatedEmails.push(companyKey);
+            
+            // CAS 1: Entreprise existe déjà → Incrémenter seulement
+            return {
+              updateOne: {
+                filter: { 
+                  nom,
+                  annee: company.annee
+                },
+                update: {
+                  $inc: { nombreStagiaires: 1 },
+                  $set: {
+                    updatedAt: new Date(),
+                    lastActivity: new Date()
+                  }
+                }
+              }
+            };
+          } else {
+            // CAS 2: Nouvelle entreprise → Créer avec nombreStagiaires: 1
+            return {
+              updateOne: {
+                filter: { 
+                  nom,
+                  annee: company.annee
+                },
+                update: {
+                  $setOnInsert: {
+                    nom: company.nom,
+                    secteur: company.secteur,
+                    adresse: company.adresse,
+                    contact: company.contact,
+                    email: company.email,
+                    telephone: company.telephone,
+                    annee: company.annee,
+                    createdAt: new Date(),
+                    nombreStagiaires: 1  // Premier stagiaire
+                  },
+                  $set: {
+                    updatedAt: new Date(),
+                    lastActivity: new Date()
+                  }
+                },
+                upsert: true
+              }
+            };
+          }
         });
-        
-        
-        
-        if (Array.isArray(result)) {
-          totalInserted += result.length;
-          insertedIds.push(...result.map((doc: any) => doc._id));
-          
+
+        const result = await Company.bulkWrite(bulkOperations, { ordered: false });
+
+        totalInserted += result.upsertedCount || 0;
+        totalUpdated += result.modifiedCount || 0;
+
+        if (result.upsertedIds) {
+          const newIds = Object.values(result.upsertedIds)
+            .map((doc: any) => doc._id?.toString())
+            .filter(id => id);
+          insertedIds.push(...newIds);
         }
 
-      
-        const countAfter = await Company.countDocuments();
-       
-       
-        if (insertedIds.length > 0) {
-          const found = await Company.findById(insertedIds[0]);
-          
-          if (found) {
-          
-          }
-        }
+        logger.info('BATCH_SUCCESS', `Batch ${batchNumber} traité`, {
+          batch: batchNumber,
+          nouvelles: result.upsertedCount,
+          misesAJour: result.modifiedCount,
+          doublons: totalDuplicates,
+          matchedCount: result.matchedCount
+        });
 
       } catch (error: any) {
-        console.error(`   Error code:`, error.code);
+        logger.error('BATCH_ERROR', error, { batch: batchNumber });
         
         if (error.writeErrors) {
-          const inserted = batch.length - error.writeErrors.length;
-          totalInserted += inserted;
+          const successfulInBatch = batch.length - error.writeErrors.length;
+          totalInserted += successfulInBatch;
           totalFailed += error.writeErrors.length;
 
-          error.writeErrors.forEach((err: any, idx: number) => {
-            console.error(`   Write Error ${idx + 1}:`, {
-              index: err.index,
-              code: err.err.code,
-              message: err.err.errmsg,
-            });
+          error.writeErrors.forEach((writeError: any) => {
             errors.push({
               batch: batchNumber,
-              index: err.index,
-              code: err.err.code,
-              message: err.err.errmsg,
+              index: writeError.index,
+              code: writeError.err.code,
+              message: writeError.err.message,
+              document: {
+                nom: batch[writeError.index]?.nom,
+                email: batch[writeError.index]?.email
+              }
             });
           });
-
-          // Get IDs of successfully inserted docs
-          if (error.insertedDocs && Array.isArray(error.insertedDocs)) {
-            insertedIds.push(...error.insertedDocs.map((doc: any) => doc._id));
-          }
         } else {
           totalFailed += batch.length;
           errors.push({
             batch: batchNumber,
-            error: error.message,
-            stack: error.stack,
+            error: 'Batch processing failed',
+            message: error.message
           });
         }
       }
     }
 
-    
-    
-    const finalCount = await Company.countDocuments();
-  
-    const estimatedCount = await Company.estimatedDocumentCount();
-
-    const findAll = await Company.find();
-
-    const directCount = await mongoose.connection.db?.collection('companies').countDocuments();
-
-    const directFind = await mongoose.connection.db?.collection('companies').find().limit(3).toArray();
-    if (directFind && directFind.length > 0) {
-
-    }
-
-    // ✅ LIST ALL COLLECTIONS
-    const collections = await mongoose.connection.db?.listCollections().toArray();
-    //console.log(`📊 All collections in database:`, collections?.map(c => c.name));
+    const totalProcessed = totalInserted + totalUpdated;
+    const efficiency = rawCompanies.length > 0 
+      ? ((totalProcessed / rawCompanies.length) * 100).toFixed(1)
+      : '0.0';
 
     return NextResponse.json({
       success: true,
       data: {
+        operation: 'upsert',
         inserted: totalInserted,
+        updated: totalUpdated,
+        duplicates: totalDuplicates,
         failed: totalFailed,
-        total: companies.length,
-        verification: {
-          countDocuments: finalCount,
-          estimatedDocumentCount: estimatedCount,
-          findLength: findAll.length,
-          directCount: directCount,
-          directFindLength: directFind?.length,
-        },
-        insertedIds: insertedIds.slice(0, 5),
-        databaseName: mongoose.connection.name,
-        collectionName: Company.collection.name,
-        allCollections: collections?.map(c => c.name),
-        errors: errors.length > 0 ? errors : undefined,
-      },
+        total: rawCompanies.length,
+        efficiency: `${efficiency}%`,
+        insertedIds: insertedIds.slice(0, 10),
+        updatedEmails: updatedEmails.slice(0, 10),
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
+        summary: {
+          batchesProcessed: Math.ceil(rawCompanies.length / BATCH_SIZE),
+          successRate: efficiency,
+          newCompaniesRate: `${((totalInserted / rawCompanies.length) * 100).toFixed(1)}%`,
+          updateRate: `${((totalUpdated / rawCompanies.length) * 100).toFixed(1)}%`
+        }
+      }
+    }, { 
+      status: totalFailed === 0 ? 200 : 207
     });
 
   } catch (error: any) {
-    console.error('   Stack:', error.stack);
+    logger.error('GLOBAL_BATCH_ERROR', error);
+    
     return NextResponse.json(
       { 
-        error: 'Failed to insert companies',
-        message: error.message,
-        stack: error.stack,
+        success: false,
+        error: 'Batch processing failed',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     await connectDB();
-    
-    const count1 = await Company.countDocuments();
-    const count2 = await Company.estimatedDocumentCount();
-    const count3 = await mongoose.connection.db?.collection('companies').countDocuments();
-  
-    
-    const students = await Company.find().limit(10);
-    const directDocs = await mongoose.connection.db?.collection('companies').find().limit(10).toArray();
 
-    // List all collections
-    const collections = await mongoose.connection.db?.listCollections().toArray();
-    
-    return NextResponse.json({ 
+    const [totalCount, sampleCompanies] = await Promise.all([
+      Company.countDocuments(),
+      Company.find()
+        .select('nom email annee nombreStagiaires createdAt')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean()
+    ]);
+
+    return NextResponse.json({
       success: true,
-      counts: {
-        mongooseCount: count1,
-        estimatedCount: count2,
-        directCount: count3,
-      },
-      documents: {
-        mongoose: students.length,
-        direct: directDocs?.length,
-      },
-      students,
-      directDocs,
-      collections: collections?.map(c => c.name),
-      databaseName: mongoose.connection.name,
-      collectionName: Company.collection.name,
+      data: {
+        totalCount,
+        sample: sampleCompanies,
+        collection: Company.collection.collectionName,
+        database: mongoose.connection.name
+      }
     });
+
   } catch (error: any) {
+    logger.error('BATCH_STATS_ERROR', error);
+    
     return NextResponse.json(
-      { error: 'Failed to fetch companies', message: error.message },
+      { 
+        success: false,
+        error: 'Failed to retrieve company statistics'
+      },
       { status: 500 }
     );
   }

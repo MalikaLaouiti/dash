@@ -31,7 +31,6 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
     )
   }
 
-  // Fonction pour filtrer les données par année
   const filterByYear = <T extends { annee: string }>(items: T[]): T[] => {
     if (!selectedYear) return items
     return items.filter(item => item.annee === selectedYear)
@@ -73,6 +72,7 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
       <TableCell>{company.telephone || "N/A"}</TableCell>
       <TableCell>
         <Badge variant="outline">{company.nombreStagiaires} stagiaires</Badge>
+
       </TableCell>
     </TableRow>
   )
