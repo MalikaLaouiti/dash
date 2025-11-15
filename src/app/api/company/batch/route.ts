@@ -30,13 +30,24 @@ const logger = {
   }
 };
 
+function normalizeCompanyName(name:string): string {
+  if (!name) return '';
+  
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 export async function POST(request: NextRequest) {
   let totalInserted = 0;
   let totalUpdated = 0;
   let totalFailed = 0;
   let totalDuplicates = 0;
   const insertedIds: string[] = [];
-  const updatedEmails: string[] = [];
+  const updatedCompanies: string[] = [];
   const errors: any[] = [];
 
   try {
@@ -44,16 +55,12 @@ export async function POST(request: NextRequest) {
 
     if (!rawCompanies || !Array.isArray(rawCompanies) || rawCompanies.length === 0) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: 'Companies array is required and cannot be empty'
-        },
+        { success: false, error: 'Companies array is required and cannot be empty' },
         { status: 400 }
       );
     }
 
     await connectDB();
-
     const BATCH_SIZE = 100;
 
     for (let i = 0; i < rawCompanies.length; i += BATCH_SIZE) {
@@ -61,55 +68,68 @@ export async function POST(request: NextRequest) {
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
       try {
-        // Créer des clés uniques combinant nom + année
-        const companyKeys = batch.map(company => ({
-          nom: company.nom.toLowerCase(),
+        const normalizedBatch = batch.map(company => ({
+          ...company,
+          nomNormalise: normalizeCompanyName(company.nom),
+          annee: Number(company.annee)
+        }));
+
+        const companyKeys = normalizedBatch.map(company => ({
+          nomNormalise: company.nomNormalise, 
           annee: company.annee
         }));
 
-        // Chercher les entreprises existantes avec même nom ET même année
         const existingCompanies = await Company.find(
           {
             $or: companyKeys.map(ck => ({
-              nom: ck.nom,
+              nomNormalise: ck.nomNormalise, 
               annee: ck.annee
             }))
           },
-          { nom: 1, _id: 1, annee: 1, nombreStagiaires: 1 }
+          { nom: 1, nomNormalise: 1, _id: 1, annee: 1, nombreStagiaires: 1 }
         ).lean();
 
-        // Map avec clé composite "nom-annee"
+        logger.info('EXISTING_FOUND', `Batch ${batchNumber}`, {
+          found: existingCompanies.length,
+          searching: companyKeys.length
+        });
+
         const existingNomsMap = new Map(
           existingCompanies.map(ec => [
-            `${ec.nom}-${ec.annee}`, 
+            `${ec.nomNormalise}-${ec.annee}`,  
             { 
               id: ec._id, 
-              currentCount: ec.nombreStagiaires || 0 
+              currentCount: ec.nombreStagiaires || 0,
+              nom: ec.nom,
+              annee: ec.annee
             }
           ])
         );
 
-        // SOLUTION CORRECTE: Séparer les opérations selon le cas
-        const bulkOperations = batch.map(company => {
-          const nom = company.nom.toLowerCase();
-          const companyKey = `${nom}-${company.annee}`;
+        const bulkOperations = normalizedBatch.map(company => {
+          const companyKey = `${company.nomNormalise}-${company.annee}`;  
           const existingCompany = existingNomsMap.get(companyKey);
           const isDuplicate = !!existingCompany;
 
           if (isDuplicate) {
             totalDuplicates++;
-            updatedEmails.push(companyKey);
+            updatedCompanies.push(companyKey);
             
-            // CAS 1: Entreprise existe déjà → Incrémenter seulement
             return {
               updateOne: {
                 filter: { 
-                  nom,
+                  nomNormalise: company.nomNormalise,  
                   annee: company.annee
                 },
                 update: {
                   $inc: { nombreStagiaires: 1 },
                   $set: {
+                    nom: company.nom,  
+                    secteur: company.secteur,
+                    adresse: company.adresse,
+                    contact: company.contact,
+                    email: company.email,
+                    telephone: company.telephone,
                     updatedAt: new Date(),
                     lastActivity: new Date()
                   }
@@ -117,16 +137,16 @@ export async function POST(request: NextRequest) {
               }
             };
           } else {
-            // CAS 2: Nouvelle entreprise → Créer avec nombreStagiaires: 1
             return {
               updateOne: {
                 filter: { 
-                  nom,
+                  nomNormalise: company.nomNormalise,  
                   annee: company.annee
                 },
                 update: {
                   $setOnInsert: {
                     nom: company.nom,
+                    nomNormalise: company.nomNormalise,
                     secteur: company.secteur,
                     adresse: company.adresse,
                     contact: company.contact,
@@ -134,7 +154,7 @@ export async function POST(request: NextRequest) {
                     telephone: company.telephone,
                     annee: company.annee,
                     createdAt: new Date(),
-                    nombreStagiaires: 1  // Premier stagiaire
+                    nombreStagiaires: 1
                   },
                   $set: {
                     updatedAt: new Date(),
@@ -148,7 +168,6 @@ export async function POST(request: NextRequest) {
         });
 
         const result = await Company.bulkWrite(bulkOperations, { ordered: false });
-
         totalInserted += result.upsertedCount || 0;
         totalUpdated += result.modifiedCount || 0;
 
@@ -159,13 +178,27 @@ export async function POST(request: NextRequest) {
           insertedIds.push(...newIds);
         }
 
-        logger.info('BATCH_SUCCESS', `Batch ${batchNumber} traité`, {
+        logger.info('BATCH_SUCCESS', `Batch ${batchNumber}`, {
           batch: batchNumber,
-          nouvelles: result.upsertedCount,
-          misesAJour: result.modifiedCount,
-          doublons: totalDuplicates,
+          inserted: result.upsertedCount,
+          updated: result.modifiedCount,
+          duplicates: totalDuplicates,
           matchedCount: result.matchedCount
         });
+
+        if (result.modifiedCount > 0 && normalizedBatch[0]) {
+          const sampleUpdated = await Company.findOne({
+            nomNormalise: normalizedBatch[0].nomNormalise,
+            annee: normalizedBatch[0].annee
+          }).select('nom nombreStagiaires');
+          
+          if (sampleUpdated) {
+            logger.info('INCREMENT_VERIFICATION', 'Check', {
+              company: sampleUpdated.nom,
+              count: sampleUpdated.nombreStagiaires
+            });
+          }
+        }
 
       } catch (error: any) {
         logger.error('BATCH_ERROR', error, { batch: batchNumber });
@@ -183,7 +216,7 @@ export async function POST(request: NextRequest) {
               message: writeError.err.message,
               document: {
                 nom: batch[writeError.index]?.nom,
-                email: batch[writeError.index]?.email
+                annee: batch[writeError.index]?.annee
               }
             });
           });
@@ -214,13 +247,14 @@ export async function POST(request: NextRequest) {
         total: rawCompanies.length,
         efficiency: `${efficiency}%`,
         insertedIds: insertedIds.slice(0, 10),
-        updatedEmails: updatedEmails.slice(0, 10),
+        updatedCompanies: updatedCompanies.slice(0, 10),
         errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
         summary: {
           batchesProcessed: Math.ceil(rawCompanies.length / BATCH_SIZE),
           successRate: efficiency,
           newCompaniesRate: `${((totalInserted / rawCompanies.length) * 100).toFixed(1)}%`,
-          updateRate: `${((totalUpdated / rawCompanies.length) * 100).toFixed(1)}%`
+          updateRate: `${((totalUpdated / rawCompanies.length) * 100).toFixed(1)}%`,
+          duplicateRate: `${((totalDuplicates / rawCompanies.length) * 100).toFixed(1)}%`
         }
       }
     }, { 
