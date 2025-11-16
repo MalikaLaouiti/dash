@@ -5,45 +5,21 @@ import { StudentDTO } from '@/dto/student.dto';
 import { SupervisorDTO } from '@/dto/supervisor.dto';
 import {CompanyDTO} from '@/dto/company.dto'; 
 
-// export interface Student {
-//   codeProjet: string;
-//   cin: number;
-//   prenom: string;
-//   email?: string;
-//   telephone?: string;
-//   filiere: string;
-//   annee: string;
-//   titreProjet?: string;
-//   score?: number;
-//   companyId?: string;
-//   localisation_type?: "interne" | "externe";
-//   encadreurAcId?: string;
-//   encadreurProId?: string;
-//   dureeStage?: string;
-//   debutStage?: Date;
-//   finStage?: Date;
-//   collaboration: "binome" | "monome";
-//   ficheInformation?: string;
-//   cahierCharge?: string;
-// }
-
-// export interface Company {
-//   nom: string;
-//   secteur: string;
-//   adresse?: string;
-//   contact?: string;
-//   email?: string;
-//   telephone?: string;
-//   annee: string;
-// }
-
-// export interface Supervisor {
-//   prenom: string;
-//   email?: string;
-//   telephone?: string;
-//   annee: string;
-//   categorie: "professionnel" | "academique";
-// }
+function normalizeCompanyName(name: string): string {
+  if (!name || typeof name !== 'string') return '';
+  const cleaned = name.trim();
+  if (cleaned.length === 0) return '';
+  return cleaned
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['']/g, ' ')
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, '')
+    .replace("societe", "")
+    .replace("ste", "")
+    .trim();
+}
 
 export interface ParsedExcelData {
   students: StudentDTO[];
@@ -83,8 +59,8 @@ export class ExcelParser {
       nom: ["société"],
       secteur: ["domaine d'activités", "secteur", "sector"],
       adresse: ["adresse de société", "address"],
-      contact: ["e-mail encadrant professionnel", "contact"],
-      email: ["email", "mail"],
+      // contact: ["e-mail encadrant professionnel", "contact"],
+      email: ["e-mail encadrant professionnel", "mail"],
       telephone: ["phone number encadrant professionnel", "telephone", "phone"],
       encadrantPro: ["encadrant professionnel", "professional supervisor"]
     },
@@ -208,36 +184,62 @@ export class ExcelParser {
   }
 
   
-  private static parseCompanies(data: any[][], year: string): CompanyDTO[] {
+  private static parseCompanies(data: any[][], year: number): CompanyDTO[] {
     if (data.length < 2) return [];
-
+    
     const headers = data[0].map(h => this.cleanString(h).toLowerCase());
     const indices = this.extractColumnIndices(headers, 'companies');
-    const companies: CompanyDTO[] = [];
-    const seenCompanies = new Set<string>();
-
+    
+    
+    const companiesMap = new Map<string, CompanyDTO>();
+    
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if (!row || row.length === 0) continue;
+      
+      const nomBrut = indices.nom >= 0 ? this.cleanString(row[indices.nom]) : '';
+      if (!nomBrut) continue; 
+      
+      const nomNormalise = normalizeCompanyName(nomBrut);
+      const companyKey = `${nomNormalise}_${year}`;
 
-      const company: CompanyDTO = {
-        nom: indices.nom >= 0 ? this.cleanString(row[indices.nom]) : '',
-        secteur: indices.secteur >= 0 ? this.cleanString(row[indices.secteur]) : '',
-        annee: year,
-        adresse: indices.adresse >= 0 ? this.cleanString(row[indices.adresse]) || undefined : undefined,
-        contact: indices.contact >= 0 ? this.cleanString(row[indices.contact]) || undefined : undefined,
-        email: indices.email >= 0 ? this.cleanString(row[indices.email]) || undefined : undefined,
-        telephone: indices.telephone >= 0 ? this.cleanString(row[indices.telephone]) || undefined : undefined,
-      };
-
-      // Éviter les doublons basés sur le nom
-      const companyKey = `${company.nom.toLowerCase()}_${year}`;
-      if (company.nom && !seenCompanies.has(companyKey)) {
-        companies.push(company);
-        seenCompanies.add(companyKey);
+      if (!companiesMap.has(companyKey)) {
+        const company: CompanyDTO = {
+          nom: nomBrut, 
+          secteur: indices.secteur >= 0 ? this.cleanString(row[indices.secteur]) : '',
+          annee: year,
+          nomNormalise: nomNormalise,
+          adresse: indices.adresse >= 0 ? this.cleanString(row[indices.adresse]) || undefined : undefined,
+          email: indices.email >= 0 ? [this.cleanString(row[indices.email])] : undefined,
+          telephone: indices.telephone >= 0 ? [this.cleanString(row[indices.telephone])] : undefined,
+          nombreStagiaires: 1,
+          lastActivity: new Date().toISOString(),
+        };
+        
+        companiesMap.set(companyKey, company);
+        console.log(`Nouvelle entreprise: ${nomBrut} (${year})`);
+      } 
+      
+      else {
+        const existingCompany = companiesMap.get(companyKey)!;
+        existingCompany.nombreStagiaires += 1;
+        existingCompany.lastActivity = new Date().toISOString(); 
+        existingCompany.email?.push(this.cleanString(row[indices.email]));
+        existingCompany.encadrantPro?.push(this.cleanString(row[indices.encadrantPro]))
+        existingCompany.telephone?.push(this.cleanString(row[indices.telephone]));
+        
+        console.log(`Doublon détecté: ${nomBrut} (${year}) - Total stagiaires: ${existingCompany.nombreStagiaires}`);
       }
     }
-
+    
+    // Convertir la Map en tableau
+    const companies = Array.from(companiesMap.values());
+    
+    console.log(`\n Parsing terminé:`);
+    console.log(`   Lignes traitées: ${data.length - 1}`);
+    console.log(`   Entreprises uniques: ${companies.length}`);
+    console.log(`   Doublons fusionnés: ${(data.length - 1) - companies.length}`);
+    
     return companies;
   }
 
@@ -318,7 +320,7 @@ export class ExcelParser {
       yearsCovered.add(year);
 
       students.push(...this.parseStudents(sheetData as any[][], year));
-      companies.push(...this.parseCompanies(sheetData as any[][], year));
+      companies.push(...this.parseCompanies(sheetData as any[][], Number(year)));
       supervisors.push(...this.parseSupervisors(sheetData as any[][], year));
     }
 

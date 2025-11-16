@@ -6,9 +6,6 @@ if (!MONGODB_URI) {
   throw new Error('Please define MONGODB_URI in .env');
 }
 
-//  Add detailed logging
-console.log('MongoDB URI (masked):', MONGODB_URI?.replace(/:[^:]*@/, ':****@'));
-
 let cached = (global as any).mongoose;
 
 if (!cached) {
@@ -17,7 +14,7 @@ if (!cached) {
 
 export async function connectDB() {
   if (cached.conn) {
-    console.log('✅ Using cached connection');
+    console.log(' Using cached connection');
     console.log('   Database:', cached.conn.connection.name);
     console.log('   State:', cached.conn.connection.readyState);
     return cached.conn;

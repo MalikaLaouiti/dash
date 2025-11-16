@@ -4,11 +4,12 @@ function normalizeCompanyName(name: string): string {
   if (!name) return '';
   
   return name
-    .toLowerCase()
+    .toUpperCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[\t\s+ ']/g, '')
+    .replace(/\s+/g, '')
     .trim();
 }
 
@@ -20,8 +21,7 @@ const CompanySchema = new mongoose.Schema({
 
   nomNormalise: { 
     type: String, 
-    required: true,
-    lowercase: true 
+    required: false,
   },
   
   secteur: { 
@@ -35,13 +35,12 @@ const CompanySchema = new mongoose.Schema({
   },
   
   adresse: { type: String },
-  contact: { type: String },
-  email: { type: String },
-  telephone: { type: String },
+  email: [{ type: String }],
+  telephone: [{ type: String }],
   
   nombreStagiaires: { 
     type: Number, 
-    default: 0 
+    default: 1 
   },
   
   encadrantPro: [{
@@ -57,30 +56,29 @@ const CompanySchema = new mongoose.Schema({
 });
 
 CompanySchema.index(
-  { nomNormalise: 1, annee: 1 }, 
-  { unique: true }
+  { nomNormalise: 1, annee: 1 },{ unique: false }
 );
 
-CompanySchema.index({ secteur: 1 });
+CompanySchema.index({ secteur: 1 },{ unique: false });
 
-CompanySchema.index({ nom: 'text', secteur: 'text' });
+CompanySchema.index({ nom: 'text', secteur: 'text' },{ unique: false });
 
-CompanySchema.pre('save', function(next) {
-  if (this.isModified('nom')) {
-    this.nomNormalise = normalizeCompanyName(this.nom);
-  }
-  next();
-});
+// CompanySchema.pre('save', function(next) {
+//   if (this.isModified('nom')) {
+//     this.nomNormalise = normalizeCompanyName(this.nom);
+//   }
+//   next();
+// });
 
-CompanySchema.pre('findOneAndUpdate', function(next) {
-  const update: any = this.getUpdate();
-  if (update.$set && update.$set.nom) {
-    update.$set.nomNormalise = normalizeCompanyName(update.$set.nom);
-  } else if (update.$setOnInsert && update.$setOnInsert.nom) {
-    update.$setOnInsert.nomNormalise = normalizeCompanyName(update.$setOnInsert.nom);
-  }
-  next();
-});
+// CompanySchema.pre('findOneAndUpdate', function(next) {
+//   const update: any = this.getUpdate();
+//   if (update.$set && update.$set.nom) {
+//     update.$set.nomNormalise = normalizeCompanyName(update.$set.nom);
+//   } else if (update.$setOnInsert && update.$setOnInsert.nom) {
+//     update.$setOnInsert.nomNormalise = normalizeCompanyName(update.$setOnInsert.nom);
+//   }
+//   next();
+// });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.Company) {
   delete mongoose.models.Company;
