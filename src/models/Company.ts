@@ -30,7 +30,7 @@ const CompanySchema = new mongoose.Schema({
   },
   
   annee: { 
-    type: Number, 
+    type: String, 
     required: true 
   },
   

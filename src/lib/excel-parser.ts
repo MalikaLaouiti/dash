@@ -59,7 +59,6 @@ export class ExcelParser {
       nom: ["société"],
       secteur: ["domaine d'activités", "secteur", "sector"],
       adresse: ["adresse de société", "address"],
-      // contact: ["e-mail encadrant professionnel", "contact"],
       email: ["e-mail encadrant professionnel", "mail"],
       telephone: ["phone number encadrant professionnel", "telephone", "phone"],
       encadrantPro: ["encadrant professionnel", "professional supervisor"]
@@ -184,7 +183,7 @@ export class ExcelParser {
   }
 
   
-  private static parseCompanies(data: any[][], year: number): CompanyDTO[] {
+  private static parseCompanies(data: any[][], year: string): CompanyDTO[] {
     if (data.length < 2) return [];
     
     const headers = data[0].map(h => this.cleanString(h).toLowerCase());
@@ -311,21 +310,16 @@ export class ExcelParser {
       return this.createEmptyResult();
     }
 
-    // Traiter chaque feuille
     for (const [sheetName, sheetData] of Object.entries(rawExcelData.sheets)) {
       if (!Array.isArray(sheetData) || sheetData.length === 0) continue;
 
-      // Extraire l'année du nom de la feuille
       const year = this.extractYearFromSheetName(sheetName);
       yearsCovered.add(year);
 
       students.push(...this.parseStudents(sheetData as any[][], year));
-      companies.push(...this.parseCompanies(sheetData as any[][], Number(year)));
+      companies.push(...this.parseCompanies(sheetData as any[][], year));
       supervisors.push(...this.parseSupervisors(sheetData as any[][], year));
     }
-
-    // Sauvegarder dans la base de données
-    // this.saveToDatabase(students, companies, supervisors);
 
     return {
       students,

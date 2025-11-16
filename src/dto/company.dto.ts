@@ -6,7 +6,7 @@ export interface CompanyDTO {
   // contact?: string;
   email?: string[];
   telephone?: string[];
-  annee: number;
+  annee: string;
   encadrantPro?: string[];
   nombreStagiaires: number;
   lastActivity?: string;
