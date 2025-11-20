@@ -4,7 +4,7 @@ export interface SupervisorDTO {
   telephone?: string;
   annee: string;
   categorie: "professionnel" | "academique";
-  nombreEtudiants?: number;
+  nombreEtudiants: number;
   createdAt?: string;
   updatedAt?: string;
 }
