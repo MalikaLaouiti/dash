@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useState ,useMemo} from "react";
 import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser";
 import { ExcelUploader } from "@/components/excel-uploader";
+import { set } from "mongoose";
+import { useData } from "@/Context/DataContext";
 
 interface TabConfig {
   id: string;
@@ -25,26 +27,26 @@ export default function DashHome() {
     companies: true,
     supervisors: true,
   })
-  const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
+  const { parsedData, setParsedData, selectedYear ,setSelectedYear} = useData();
+  
   const [activeTab, setActiveTab] = useState<string>("students");
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  
   
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
-    // if (data.summary.yearsCovered.length > 0 && !selectedYear) {
-    //   setSelectedYear(data.summary.yearsCovered[0]);
-    // }
+
+    if (data.summary.yearsCovered.length > 0 && !selectedYear) {
+      setSelectedYear(data.summary.yearsCovered[0]);
+    }
   };
 
-  // const handleYearSelect = (year: string) => {
-  //   setSelectedYear(year);
-  // };
+
 
   // const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
 
   const dynamicTabs = useMemo((): TabConfig[] => {
     if (!parsedData) return [];
-
+    
     const tabs: TabConfig[] = [
       {
         id: "students",
