@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/mongodb';
 import Supervisor from '@/models/Supervisor';
 import mongoose from 'mongoose';
 import { debug } from 'console';
+import { SupervisorDTO } from '@/dto/supervisor.dto';
 
 const BATCH_SIZE = 100;
 const page = 1;
@@ -31,23 +32,15 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < supervisors.length; i += BATCH_SIZE) {
       const batch = supervisors.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-
-     
-
       try {
         const result = await Supervisor.insertMany(batch, { 
           ordered: false,
         });
-      
-        
         if (Array.isArray(result)) {
           totalInserted += result.length;
           insertedIds.push(...result.map((doc: any) => doc._id));
         }
-
-
       } catch (error: any) {
-        
         if (error.writeErrors) {
           const inserted = batch.length - error.writeErrors.length;
           totalInserted += inserted;
@@ -105,58 +98,20 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
-
-    const PAGE = 1;
-    const LIMIT = 500;
-    const skip = (PAGE - 1) * LIMIT;
-
-    // Exécuter en parallèle pour meilleures performances
-    const [total, supervisors, collections] = await Promise.all([
-      Supervisor.countDocuments(),
-      Supervisor.find()
-        .skip(skip)
-        .limit(LIMIT)
-        .sort({ createdAt: -1 })
-        .lean(),
-      mongoose.connection.db?.listCollections().toArray() || []
-    ]);
-
-    const response = {
-      success: true,
-      data: supervisors,
-      debug: {},
-      pagination: {
-        currentPage: PAGE,
-        pageSize: LIMIT,
-        totalRecords: total,
-        totalPages: Math.ceil(total / LIMIT),
-        hasNextPage: PAGE < Math.ceil(total / LIMIT),
-        recordsInThisPage: supervisors.length
-      }
-    };
-
-    // Ajouter les infos de debug seulement en développement
-    if (process.env.NODE_ENV === 'development') {
-      response.debug = {
-        collections: collections.map(c => c.name),
-        databaseName: mongoose.connection.name,
-        collectionName: Supervisor.collection.name
-      };
-    }
-
-    return NextResponse.json(response);
     
+    const supervisors :SupervisorDTO[] = await Supervisor.find();
+
+    return NextResponse.json({ 
+      data: supervisors,
+      count: supervisors.length
+    });
   } catch (error: any) {
-    console.error('GET Supervisors Error:', error);
+    console.error('GET Error:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to fetch supervisors',
-        message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-      },
+      { error: 'Failed to fetch supervisors', message: error.message },
       { status: 500 }
     );
   }

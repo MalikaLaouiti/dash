@@ -63,7 +63,6 @@ const StudentSchema = new Schema({
   ficheInformation: { type: String },
   cahierCharge: { type: String }
 }, {
-  timestamps: true,
   collection: 'students'
 });
 

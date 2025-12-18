@@ -2,33 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Company from '@/models/Company';
 import mongoose from 'mongoose';
+import { CompanyDTO } from '@/dto/company.dto';
 
-const logger = {
-  error: (context: string, error: any, metadata?: any) => {
-    console.error(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: 'ERROR',
-      context,
-      error: {
-        message: error.message,
-        code: error.code,
-        name: error.name
-      },
-      metadata,
-      environment: process.env.NODE_ENV
-    }));
-  },
-  info: (context: string, message: string, metadata?: any) => {
-    console.log(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: 'INFO',
-      context,
-      message,
-      metadata,
-      environment: process.env.NODE_ENV
-    }));
-  }
-};
+
 
 function normalizeCompanyName(name: string): string {
   if (!name || typeof name !== 'string') return '';
@@ -69,7 +45,6 @@ export async function POST(request: NextRequest) {
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
       try {
-        
         const normalizedBatch = batch.map(company => ({
           ...company,
           nomNormalise: normalizeCompanyName(company.nom),
@@ -79,29 +54,15 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date(),
           lastActivity: new Date()
         }));
-
-        logger.info('BATCH_NORMALIZED', `Batch ${batchNumber}`, {
-          totalItems: normalizedBatch.length
-        });
-
         const result = await Company.insertMany(normalizedBatch, { 
           ordered: false 
         });
 
         totalInserted += result.length;
-        
+
         const newIds = result.map(doc => doc._id.toString());
         insertedIds.push(...newIds);
-
-        logger.info('BATCH_SUCCESS', `Batch ${batchNumber}`, {
-          batch: batchNumber,
-          inserted: result.length
-        });
-
-      } catch (error: any) {
-        logger.error('BATCH_ERROR', error, { batch: batchNumber });
-
-        
+      } catch (error: any) {  
         if (error.writeErrors) {
           const successfulInBatch = batch.length - error.writeErrors.length;
           totalInserted += successfulInBatch;
@@ -129,9 +90,7 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    const efficiency = rawCompanies.length > 0
-      ? ((totalInserted / rawCompanies.length) * 100).toFixed(1)
-      : '0.0';
+    
 
     return NextResponse.json({
       success: true,
@@ -140,12 +99,11 @@ export async function POST(request: NextRequest) {
         inserted: totalInserted,
         failed: totalFailed,
         total: rawCompanies.length,
-        efficiency: `${efficiency}%`,
         insertedIds: insertedIds.slice(0, 10),
         errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
         summary: {
           batchesProcessed: Math.ceil(rawCompanies.length / BATCH_SIZE),
-          successRate: efficiency
+         
         }
       }
     }, {
@@ -153,7 +111,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    logger.error('GLOBAL_BATCH_ERROR', error);
+
 
     return NextResponse.json(
       {
@@ -166,37 +124,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
+    const companies: CompanyDTO[] = await Company.find();
 
-    const [totalCount, sampleCompanies] = await Promise.all([
-      Company.countDocuments(),
-      Company.find()
-        .select('nom email annee nombreStagiaires createdAt')
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .lean()
-    ]);
-
-    return NextResponse.json({
+    return NextResponse.json({ 
       success: true,
-      data: {
-        totalCount,
-        sample: sampleCompanies,
-        collection: Company.collection.collectionName,
-        database: mongoose.connection.name
-      }
+      data: companies,  
+      count: companies.length
     });
-
   } catch (error: any) {
-    logger.error('BATCH_STATS_ERROR', error);
-    
+    console.error('GET Error:', error);
     return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to retrieve company statistics'
-      },
+      { error: 'Failed to fetch companies', message: error.message },
       { status: 500 }
     );
   }

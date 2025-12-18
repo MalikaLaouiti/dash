@@ -2,17 +2,22 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react"
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser"
+import { SupervisorDTO } from "@/dto/supervisor.dto"
+import { StudentDTO } from "@/dto/student.dto"
+import { CompanyDTO } from "@/dto/company.dto"
 
 interface ExcelUploaderProps {
   onDataLoad: (data: ParsedExcelData) => void
 }
 
+
 export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [fileName, setFileName] = useState<string>("")
+  const [isLoadingFromDB, setIsLoadingFromDB] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle")
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +69,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
       setUploadStatus("error")
     }
   }
+
   const saveToDatabase = async (parsedData: ParsedExcelData) => {
     const results = {
       students: { inserted: 0, failed: 0, total: 0 },
@@ -74,8 +80,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
     try {
       // Save students
       if (parsedData.students.length > 0) {
-        console.log(`Enregistrement de ${parsedData.students.length} étudiants...`);
-
         const response = await fetch("/api/student/batch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -89,14 +93,10 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
 
         const result = await response.json();
         results.students = result.data;
-        console.log(`Étudiants: ${result.data.inserted}/${result.data.total} insérés`);
-        console.log(result);
       }
 
       // Save companies
       if (parsedData.companies.length > 0) {
-        console.log(`Enregistrement de ${parsedData.companies.length} entreprises...`);
-
         const response = await fetch("/api/company/batch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -116,8 +116,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
 
       // Save supervisors
       if (parsedData.supervisors.length > 0) {
-        console.log(`Enregistrement de ${parsedData.supervisors.length} superviseurs...`);
-
         const response = await fetch("/api/supervisor/batch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -127,11 +125,10 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
         if (!response.ok) {
           const error = await response.json();
           console.error("Erreur superviseurs:", error);
-          // Don't throw - at least some data was saved
+
         } else {
           const result = await response.json();
           results.supervisors = result.data;
-          console.log(`Superviseurs: ${result.data.inserted}/${result.data.total} insérés`);
         }
       }
 
@@ -158,6 +155,86 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
     }
   }
 
+  const handleLoadFromDatabase = async () => {
+    setIsLoadingFromDB(true)
+    setUploadStatus("idle")
+
+    try {
+      const data = await getFromDatabase()
+  
+      const parsedData: ParsedExcelData = {
+        students: data.students,
+        companies: data.companies,
+        supervisors: data.supervisors,
+        summary: {
+          totalStudents: data.students.length,
+          totalCompanies: data.companies.length,
+          totalSupervisors: data.supervisors.length,
+          yearsCovered: data.summary.yearsCovered,
+        },
+      }
+
+      onDataLoad(parsedData)
+      setFileName("Données chargées depuis la base de données")
+      setUploadStatus("success")
+
+      console.log("✅ Données chargées depuis MongoDB:", parsedData)
+    } catch (error) {
+      console.error("❌ Erreur lors du chargement depuis la DB:", error)
+      setUploadStatus("error")
+    } finally {
+      setIsLoadingFromDB(false)
+    }
+  }
+
+  
+  const getFromDatabase = async () => {
+    try {
+
+      const studentsRes = await fetch("/api/student/batch", {
+        method: "GET",
+        
+      });
+      
+      const supervisorsRes= await fetch("/api/supervisor/batch", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }); 
+      
+      const companiesRes = await fetch("/api/company/batch", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!studentsRes.ok || !supervisorsRes.ok || !companiesRes.ok) {
+        throw new Error("Erreur lors de la récupération des données")
+      }
+
+      const studentsData = await studentsRes.json()
+      const supervisorsData = await supervisorsRes.json()
+      const companiesData = await companiesRes.json()
+
+      const yearsSet = new Set<string>()
+      studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))
+      companiesData.data.forEach((c: CompanyDTO) => yearsSet.add(c.annee))
+      supervisorsData.data.forEach((s: SupervisorDTO) => yearsSet.add(s.annee))
+
+      return {
+        students: studentsData.data as StudentDTO[],
+        companies: companiesData.data as CompanyDTO[],
+        supervisors: supervisorsData.data as SupervisorDTO[],
+        summary: {
+          totalStudents: studentsData.data.length,
+          totalCompanies: companiesData.data.length,
+          totalSupervisors: supervisorsData.data.length,
+          yearsCovered: Array.from(yearsSet).sort().reverse(),
+        },
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données:", error)
+      throw error
+    }
+  }
   return (
     <div className="flex items-center gap-4">
       {fileName && (
@@ -181,6 +258,14 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
           <Upload className="h-4 w-4" />
           {isLoading ? "Chargement..." : "Importer Excel"}
         </Button>
+        
+      </div>
+      <div className="relative">
+        <Button variant="outline" size="sm" disabled={isLoading} className="gap-2 bg-transparent" onClick={handleLoadFromDatabase}>
+          <Save className="h-4 w-4" />
+          {isLoading ? "Chargement..." : "données sauvegardées"}
+        </Button>
+        
       </div>
     </div>
   )

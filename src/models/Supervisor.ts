@@ -8,8 +8,6 @@ const SupervisorSchema = new Schema({
   nombreEtudiants: { type: Number, default: 0 },
   annee: { type: String, required: true },
   categorie: { type: String, enum: ["professionnel", "academique"], required: true }
-}, {
-  timestamps: true
 });
 
 // Index pour optimiser les requêtes

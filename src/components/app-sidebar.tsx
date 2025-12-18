@@ -35,8 +35,6 @@ export function AppSidebar( ) {
   const onYearSelect = (year: string) => {
     setSelectedYear(year);
   };
-  console.log("Available Years in Sidebar:", availableYears);
-  console.log("Selected Year in Sidebar:", selectedYear);
   const items = [
     {
       title: "Acceuil",
