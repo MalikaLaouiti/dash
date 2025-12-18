@@ -36,11 +36,11 @@ export default function DashHome() {
     // }
   };
 
-  const handleYearSelect = (year: string) => {
-    setSelectedYear(year);
-  };
+  // const handleYearSelect = (year: string) => {
+  //   setSelectedYear(year);
+  // };
 
-  const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
+  // const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
 
   const dynamicTabs = useMemo((): TabConfig[] => {
     if (!parsedData) return [];

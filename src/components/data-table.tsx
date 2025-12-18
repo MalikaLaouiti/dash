@@ -196,8 +196,7 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
           <>
             <TableHeader>
               <TableRow>
-                <TableHead>Prénom</TableHead>
-                <TableHead>Prénom</TableHead>
+                <TableHead>Nom & Prénom</TableHead>
                 <TableHead>Catégorie</TableHead>
                 <TableHead>Année</TableHead>
                 <TableHead>Email</TableHead>

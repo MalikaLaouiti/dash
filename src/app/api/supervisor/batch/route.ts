@@ -3,13 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Supervisor from '@/models/Supervisor';
 import mongoose from 'mongoose';
+import { debug } from 'console';
 
 const BATCH_SIZE = 100;
+const page = 1;
+const limit = 500; 
+const skip = (page - 1) * limit;
 
 export async function POST(request: NextRequest) {
   try {
     const { supervisors } = await request.json();
-   
 
     if (!supervisors || !Array.isArray(supervisors) || supervisors.length === 0) {
       return NextResponse.json(
@@ -102,41 +105,58 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
-    
-    // Try multiple ways to count
-    const count1 = await Supervisor.countDocuments();
 
-    const students = await Supervisor.find().limit(10);
-    const directDocs = await mongoose.connection.db?.collection('supervisors').find().limit(10).toArray();
-    
-    
-    // List all collections
-    const collections = await mongoose.connection.db?.listCollections().toArray();
- 
-    
-    return NextResponse.json({ 
+    const PAGE = 1;
+    const LIMIT = 500;
+    const skip = (PAGE - 1) * LIMIT;
+
+    // Exécuter en parallèle pour meilleures performances
+    const [total, supervisors, collections] = await Promise.all([
+      Supervisor.countDocuments(),
+      Supervisor.find()
+        .skip(skip)
+        .limit(LIMIT)
+        .sort({ createdAt: -1 })
+        .lean(),
+      mongoose.connection.db?.listCollections().toArray() || []
+    ]);
+
+    const response = {
       success: true,
-      counts: {
-        mongooseCount: count1
-      },
-      documents: {
-        mongoose: students.length,
-        direct: directDocs?.length,
-      },
-      students,
-      directDocs,
-      collections: collections?.map(c => c.name),
-      databaseName: mongoose.connection.name,
-      collectionName: Supervisor.collection.name,
-    });
+      data: supervisors,
+      debug: {},
+      pagination: {
+        currentPage: PAGE,
+        pageSize: LIMIT,
+        totalRecords: total,
+        totalPages: Math.ceil(total / LIMIT),
+        hasNextPage: PAGE < Math.ceil(total / LIMIT),
+        recordsInThisPage: supervisors.length
+      }
+    };
+
+    // Ajouter les infos de debug seulement en développement
+    if (process.env.NODE_ENV === 'development') {
+      response.debug = {
+        collections: collections.map(c => c.name),
+        databaseName: mongoose.connection.name,
+        collectionName: Supervisor.collection.name
+      };
+    }
+
+    return NextResponse.json(response);
+    
   } catch (error: any) {
-    console.error('GET Error:', error);
+    console.error('GET Supervisors Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch supervisors', message: error.message },
+      { 
+        success: false,
+        error: 'Failed to fetch supervisors',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      },
       { status: 500 }
     );
   }
