@@ -12,6 +12,7 @@ import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser";
 import { ExcelUploader } from "@/components/excel-uploader";
 import { useData } from "@/Context/DataContext";
 
+
 interface TabConfig {
   id: string;
   label: string;
@@ -28,6 +29,9 @@ export default function DashHome() {
   })
   const { parsedData, setParsedData, selectedYear, setSelectedYear } = useData();
   const [activeTab, setActiveTab] = useState<string>("students")
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null)
+  const displayData = searchResults || parsedData;
 
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
@@ -37,8 +41,6 @@ export default function DashHome() {
     }
   };
 
-  // const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
-
   const dynamicTabs = useMemo((): TabConfig[] => {
     if (!parsedData) return [];
 
@@ -46,48 +48,56 @@ export default function DashHome() {
       {
         id: "students",
         label: "Étudiants",
-        count: parsedData.summary.totalStudents,
+        count: parsedData.students.length,
         content: (
           <DataTable
-            data={parsedData}
+            data={displayData}
             activeTab="students"
             selectedYear={selectedYear || undefined}
+            searchQuery={searchQuery}
+            searchFilters={searchFilters}
           />
         ),
       },
       {
         id: "companies",
         label: "Entreprises",
-        count: parsedData.summary.totalCompanies,
+        count: parsedData.companies.length,
         content: (
           <DataTable
-            data={parsedData}
+            data={displayData}
             activeTab="companies"
             selectedYear={selectedYear || undefined}
+            searchQuery={searchQuery}
+            searchFilters={searchFilters}
           />
         ),
       },
       {
         id: "supervisors-academic",
         label: "Encadreurs Académiques",
-        count: parsedData.summary.totalSupervisors,
+        count: parsedData.supervisors.filter(s => s.categorie === "academique").length,
         content: (
           <DataTable
-            data={parsedData}
+            data={displayData}
             activeTab="supervisors-academic"
             selectedYear={selectedYear || undefined}
+            searchQuery={searchQuery}
+            searchFilters={searchFilters}
           />
         ),
       },
       {
         id: "supervisors-professional",
         label: "Encadreurs Professionnels",
-        count: parsedData.summary.totalSupervisors,
+        count: parsedData.supervisors.filter(s => s.categorie === "professionnel").length,
         content: (
           <DataTable
-            data={parsedData}
+            data={displayData}
             activeTab="supervisors-professional"
             selectedYear={selectedYear || undefined}
+            searchQuery={searchQuery}
+            searchFilters={searchFilters}
           />
         ),
       },
@@ -95,27 +105,23 @@ export default function DashHome() {
         id: "json",
         label: "JSON",
         count: 0,
-        content: <JsonPreview data={parsedData} />,
+        content: <JsonPreview data={displayData} />,
       },
     ];
-
     return tabs;
-  }, [parsedData, selectedYear]);
+  }, [displayData, parsedData, selectedYear, searchQuery, searchFilters]);
+
+
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4 p-6 border-b border-border">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Dashboard d&apos;Analyse Académique</h1>
-          {selectedYear && (
-            <Badge variant="default" className="text-sm">
-              Année: {selectedYear}
-            </Badge>
-          )}
         </div>
         <ExcelUploader onDataLoad={handleDataLoad} />
       </div>
-      <div className="flex items-center gap-4 pl-9 pr-8 border-b">
+      <div className="flex items-center gap-4 pl-9 pr-8 pb-2 border-b">
         <SearchBar
           query={searchQuery}
           onQueryChange={setSearchQuery}
@@ -123,6 +129,21 @@ export default function DashHome() {
           onFiltersChange={setSearchFilters}
         />
       </div>
+      {isSearching && (
+        <div className="text-sm text-muted-foreground">
+          Recherche en cours...
+        </div>
+      )}
+
+      {searchQuery && searchResults && (
+        <div className="text-sm text-muted-foreground">
+          <span className="font-medium">
+            {searchResults.summary.totalStudents +
+              searchResults.summary.totalCompanies +
+              searchResults.summary.totalSupervisors}
+          </span> résultat(s) trouvé(s) pour &quot;{searchQuery}&quot;
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto p-9 space-y-2">
         {!parsedData && <UsageInstructions />}
@@ -132,35 +153,22 @@ export default function DashHome() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Résumé des données importées
-                <Badge variant="secondary">{parsedData.summary.totalStudents + parsedData.summary.totalCompanies + parsedData.summary.totalSupervisors + parsedData.summary.totalSupervisors} éléments</Badge>
+                <Badge variant="secondary">{parsedData.students.length + parsedData.companies.length + parsedData.supervisors.filter(s => s.categorie === "academique").length + parsedData.supervisors.filter(s => s.categorie === "professionnel").length} éléments</Badge>
               </CardTitle>
               <CardDescription>
-                Données extraites du fichier Excel et organisées par catégorie
+                {searchQuery
+                  ? `Résultats filtrés pour "${searchQuery}"`
+                  : "Données extraites du fichier Excel et organisées par catégorie"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-1">
-                  <Badge variant="default">{parsedData.summary.totalStudents}</Badge>
-                  <span className="text-sm">Étudiants</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="secondary">{parsedData.summary.totalCompanies}</Badge>
-                  <span className="text-sm">Entreprises</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
-                  <span className="text-sm">Encadreurs Académiques</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Badge variant="outline">{parsedData.summary.totalSupervisors}</Badge>
-                  <span className="text-sm">Encadreurs Professionnels</span>
-                </div>
-              </div>
               <div className="mt-4">
                 <span className="text-sm text-muted-foreground">Années couvertes: </span>
                 {parsedData.summary.yearsCovered.map(year => (
-                  <Badge key={year} variant="outline" className="mr-2">{year}</Badge>
+                  year === selectedYear ?
+                    <Badge key={year} variant="default" className="mr-2">{year}</Badge>
+                    : <Badge key={year} variant="outline" className="mr-2">{year}</Badge>
                 ))}
               </div>
             </CardContent>
