@@ -118,7 +118,7 @@ export default function DashHome() {
             </div>
             <ExcelUploader onDataLoad={handleDataLoad} />
           </div>
-          <div className="flex items-center gap-2 p-2 border-b ">
+          <div className="flex items-center gap-4 p-1 border-b ">
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
@@ -127,7 +127,7 @@ export default function DashHome() {
             />
           </div>
 
-          <div className="flex-1 overflow-auto p-4 space-y-6">
+          <div className="flex-1 overflow-auto p-9 space-y-2">
             {!parsedData && <UsageInstructions />}
 
             {parsedData && (

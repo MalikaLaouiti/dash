@@ -73,7 +73,7 @@ export function SearchBar({ query, onQueryChange, filters, onFiltersChange }: Se
   }
 
   return (
-    <div className="space-y-3 p-4 w-full">
+    <div className="space-y-3 p-1 w-full">
       <div className="flex items-center gap-4">
         {/* Search Input */}
         <div className="relative flex-1">

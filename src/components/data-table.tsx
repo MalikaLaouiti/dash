@@ -1,28 +1,25 @@
+// components/data-table/data-table.tsx
 "use client"
 
 import * as React from "react"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableHead, TableHeader,TableRow } from "@/components/ui/table"
 import { type ParsedExcelData } from "@/lib/excel-parser"
-import { StudentDTO } from "@/dto/student.dto"
-import { CompanyDTO } from "@/dto/company.dto"
-import { SupervisorDTO } from "@/dto/supervisor.dto"
-
+import { TableRows } from "@/components/tableRow"
+import { DetailView } from "@/components/ViewDetails"
+import { PaginationControls } from "@/components/pagination"
 
 interface DataTableProps {
   data: ParsedExcelData | null
-  activeTab: "students" | "companies" | "supervisors" | "supervisors-academic" | "supervisors-professional" | "raw"
+  activeTab: "students" | "companies" | "supervisors-academic" | "supervisors-professional"
   selectedYear?: string
 }
 
 export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(10)
+  const [selectedItem, setSelectedItem] = React.useState<any>(null)
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false)
+
   if (!data) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
@@ -36,262 +33,111 @@ export function DataTable({ data, activeTab, selectedYear }: DataTableProps) {
     return items.filter(item => item.annee === selectedYear)
   }
 
-  const renderStudentRow = (student: StudentDTO) => (
-    <TableRow key={student.cin + student.annee + student.codeProjet}>
-      <TableCell>{student.codeProjet}</TableCell>
-      <TableCell className="font-medium">{student.prenom}</TableCell>
-      <TableCell>{student.cin}</TableCell>
-      <TableCell>{student.filiere}</TableCell>
-      <TableCell>{student.score}</TableCell>
-      <TableCell>{student.titreProjet}</TableCell>
-      <TableCell>{student.collaboration}</TableCell>
-      <TableCell>{student.collaborateur || ""}</TableCell>
-      <TableCell>{student.annee}</TableCell>
-      <TableCell>{student.companyId || "N/A"}</TableCell>
-      <TableCell>{student.encadreurAcId || "N/A"}</TableCell>
-      <TableCell>{student.encadreurProId || "N/A"}</TableCell>
-      <TableCell>{student.localisation_type || "Externe"}</TableCell>
-      <TableCell>{student.email || "N/A"}</TableCell>
-      <TableCell>{student.telephone || "N/A"}</TableCell>
-      <TableCell>{student.ficheInformation || "N/A"}</TableCell>
-      <TableCell>{student.cahierCharge || "N/A"}</TableCell>
-    </TableRow>
-  )
+  const getFilteredData = () => {
+    switch (activeTab) {
+      case "students":
+        return filterByYear(data.students)
+      case "companies":
+        return filterByYear(data.companies)
+      case "supervisors-academic":
+        return filterByYear(data.supervisors.filter(s => s.categorie === "academique"))
+      case "supervisors-professional":
+        return filterByYear(data.supervisors.filter(s => s.categorie === "professionnel"))
+      default:
+        return []
+    }
+  }
 
-  const renderCompanyRow = (company: CompanyDTO) => (
-    <TableRow key={company.nom + company.annee}>
-      <TableCell className="font-medium">{company.nom}</TableCell>
-      <TableCell>{company.secteur ||"N/A"}</TableCell>
-      <TableCell>{company.annee}</TableCell>
-      <TableCell>{company.adresse || "N/A"}</TableCell>
-      <TableCell>{company.email&& company.email.length > 0
-        ? company.email.join(', ')
-        : "N/A"}</TableCell>
-      <TableCell>{company.telephone && company.telephone.length > 0
-        ? company.telephone.join(', ')
-        : "N/A"
-      }</TableCell>
-      <TableCell>{company.encadrantPro && company.encadrantPro.length > 0
-        ? company.encadrantPro.join(', ')
-        : "N/A"
-      }</TableCell>
-      <TableCell>
-        <Badge variant="outline">{company.nombreStagiaires} stagiaires</Badge>
-      </TableCell>
-    </TableRow>
-  )
+  const filteredData = getFilteredData()
+  const totalItems = filteredData.length
+  const totalPages = Math.ceil(totalItems / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedData = filteredData.slice(startIndex, endIndex)
 
-  const renderSupervisorRow = (supervisor: SupervisorDTO) => (
-    <TableRow key={supervisor.prenom + supervisor.annee}>
-      <TableCell className="font-medium">{supervisor.prenom}</TableCell>
-      <TableCell>{supervisor.categorie}</TableCell>
-      <TableCell>{supervisor.annee}</TableCell>
-      <TableCell>{supervisor.email || "N/A"}</TableCell>
-      <TableCell>{supervisor.telephone || "N/A"}</TableCell>
-      <TableCell>
-        <Badge variant="outline">{supervisor.nombreEtudiants} étudiants</Badge>
-      </TableCell>
-    </TableRow>
-  )
+  const handleViewDetails = (item: any) => {
+    setSelectedItem(item)
+    setIsDetailOpen(true)
+  }
 
-
-  const getTableContent = () => {
+  const getTableHeaders = () => {
     switch (activeTab) {
       case "students":
         return (
           <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code Projet</TableHead>
-                <TableHead>Nom & Prénom</TableHead>
-                <TableHead>CIN</TableHead>
-                <TableHead>Filière</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Titre Projet</TableHead>
-                <TableHead>Collaboration</TableHead>
-                <TableHead>Collaborateur</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Entreprise</TableHead>
-                <TableHead>Encadrant Académique</TableHead>
-                <TableHead>Encadrant Professionnel</TableHead>
-                <TableHead>Localisation</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Fiche Information</TableHead>
-                <TableHead>Cahier de Charge</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filterByYear(data.students).length > 0 ? (
-                filterByYear(data.students).map(renderStudentRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={18} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucun étudiant trouvé pour l'année ${selectedYear}` : "Aucun étudiant trouvé"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+            <TableHead>Code</TableHead>
+            <TableHead>Nom & Prénom</TableHead>
+            <TableHead>CIN</TableHead>
+            <TableHead>Filière</TableHead>
+            <TableHead>Score</TableHead>
+            <TableHead>Titre Projet</TableHead>
+            <TableHead>Année</TableHead>
+            <TableHead className="w-[80px]">Actions</TableHead>
           </>
         )
-
       case "companies":
         return (
           <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Secteur</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Adresse</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Encadrants Professionnels</TableHead>
-                <TableHead>Stagiaires</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filterByYear(data.companies).length > 0 ? (
-                filterByYear(data.companies).map(renderCompanyRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucune entreprise trouvée pour l'année ${selectedYear}` : "Aucune entreprise trouvée"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+            <TableHead>Nom</TableHead>
+            <TableHead>Secteur</TableHead>
+            <TableHead>Année</TableHead>
+            <TableHead>Adresse</TableHead>
+            <TableHead>Stagiaires</TableHead>
+            <TableHead className="w-[80px]">Actions</TableHead>
           </>
         )
-
-      case "supervisors":
-        return (
-          <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom & Prénom</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Étudiants</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filterByYear(data.supervisors).length > 0 ? (
-                filterByYear(data.supervisors).map(renderSupervisorRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucun encadreur trouvé pour l'année ${selectedYear}` : "Aucun encadreur trouvé"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </>
-        )
-
-      case "supervisors-academic":
-        return (
-          <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom & Prénom</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Étudiants</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filterByYear(data.supervisors.filter(s => s.categorie === "academique")).length > 0 ? (
-                filterByYear(data.supervisors.filter(s => s.categorie === "academique")).map(renderSupervisorRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucun encadreur académique trouvé pour l'année ${selectedYear}` : "Aucun encadreur académique trouvé"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </>
-        )
-
-      case "supervisors-professional":
-        return (
-          <>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Prénom</TableHead>
-                <TableHead>Prénom</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Année</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Étudiants</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filterByYear(data.supervisors.filter(s => s.categorie === "professionnel")).length > 0 ? (
-                filterByYear(data.supervisors.filter(s => s.categorie === "professionnel")).map(renderSupervisorRow)
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    {selectedYear ? `Aucun encadreur professionnel trouvé pour l'année ${selectedYear}` : "Aucun encadreur professionnel trouvé"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </>
-        )
-
-      // case "raw":
-      //   // Combine all data for raw view with year filtering
-      //   const allData = [
-      //     ...filterByYear(data.students).map(s => ({ ...s, type: "student" })),
-      //     ...filterByYear(data.companies).map(c => ({ ...c, type: "company" })),
-      //     ...filterByYear(data.supervisors).map(s => ({ ...s, type: "supervisor" }))
-      //   ]
-
-      //   return (
-      //     <>
-      //       <TableHeader>
-      //         <TableRow>
-      //           <TableHead>Type</TableHead>
-      //           <TableHead>Nom/Société</TableHead>
-      //           <TableHead>Prénom/Secteur</TableHead>
-      //           <TableHead>Filière/Catégorie</TableHead>
-      //           <TableHead>Année</TableHead>
-      //           <TableHead>Email</TableHead>
-      //           <TableHead>Téléphone</TableHead>
-      //           <TableHead>Détails</TableHead>
-      //         </TableRow>
-      //       </TableHeader>
-      //       <TableBody>
-      //         {allData.length > 0 ? (
-      //           allData.map(renderRawDataRow)
-      //         ) : (
-      //           <TableRow>
-      //             <TableCell colSpan={8} className="text-center text-muted-foreground">
-      //               {selectedYear ? `Aucune donnée trouvée pour l'année ${selectedYear}` : "Aucune donnée trouvée"}
-      //             </TableCell>
-      //           </TableRow>
-      //         )}
-      //       </TableBody>
-      //     </>
-      //   )
-
       default:
-        return null
+        return (
+          <>
+            <TableHead>Nom & Prénom</TableHead>
+            <TableHead>Catégorie</TableHead>
+            <TableHead>Année</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Étudiants</TableHead>
+            <TableHead className="w-[80px]">Actions</TableHead>
+          </>
+        )
     }
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        {getTableContent()}
-      </Table>
+    <div className="space-y-2">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {getTableHeaders()}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRows 
+              data={paginatedData}
+              activeTab={activeTab}
+              onViewDetails={handleViewDetails}
+            />
+          </TableBody>
+        </Table>
+      </div>
+
+      <PaginationControls
+        totalItems={totalItems}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalPages={totalPages}
+        activeTab={activeTab}
+        selectedYear={selectedYear}
+      />
+
+      <DetailView
+        isOpen={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        selectedItem={selectedItem}
+        activeTab={activeTab}
+      />
     </div>
   )
 }
