@@ -117,7 +117,7 @@ export function SearchBar({ query, onQueryChange, filters, onFiltersChange }: Se
         {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent relative h-9">
+            <Button variant="outline" size="sm" className="gap-2 bg-transparent relative h-9 ">
               <Filter className="h-4 w-4" />
               Filtres
               {getActiveFiltersCount() > 0 && (
@@ -125,7 +125,7 @@ export function SearchBar({ query, onQueryChange, filters, onFiltersChange }: Se
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56" align="end">
+          <PopoverContent className="w-56 " align="end">
             <div className="space-y-4">
               <h4 className="font-medium text-sm">Filtrer par type</h4>
               <div className="space-y-3">

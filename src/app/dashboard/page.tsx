@@ -118,7 +118,7 @@ export default function DashHome() {
             </div>
             <ExcelUploader onDataLoad={handleDataLoad} />
           </div>
-          <div className="flex items-center gap-4 p-1 border-b ">
+          <div className="flex items-center gap-4 pl-9 pr-8 border-b">
             <SearchBar
               query={searchQuery}
               onQueryChange={setSearchQuery}
