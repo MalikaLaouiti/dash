@@ -12,17 +12,13 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  
-  console.log("DataProvider - parsedData:", parsedData);
-  console.log("DataProvider - selectedYear:", selectedYear);
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
 
   return (
-    <DataContext.Provider value={{ parsedData, setParsedData, selectedYear, setSelectedYear }}>
+    <DataContext.Provider value={{ parsedData, setParsedData, selectedYear, setSelectedYear}}>
       {children}
     </DataContext.Provider>
   );
@@ -30,7 +26,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 export function useData() {
   const context = useContext(DataContext);
-  console.log("DataContext:", context);
   if (!context) {
     throw new Error('useData must be used within DataProvider');
   }

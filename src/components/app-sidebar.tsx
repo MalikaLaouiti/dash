@@ -1,5 +1,11 @@
 "use client"
-import { CalendarSearch, Home, ChartNoAxesCombined, UserStar, Building2, Database } from "lucide-react"
+import { 
+  CalendarSearch, 
+  Home, 
+  ChartNoAxesCombined, 
+  UserStar, 
+  Building2, 
+  Database } from "lucide-react"
 
 import {
   Sidebar,
@@ -22,12 +28,6 @@ import {
 } from "@/components/ui/collapsible"
 import { useData } from "@/Context/DataContext"
 
-
-// interface AppSidebarProps {
-//   selectedYear?: string
-//   onYearSelect?: (year: string) => void
-//   availableYears?: string[]
-// }
 
 export function AppSidebar( ) {
   const {parsedData,selectedYear, setSelectedYear} = useData();

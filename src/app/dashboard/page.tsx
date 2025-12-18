@@ -40,8 +40,6 @@ export default function DashHome() {
     }
   };
 
-
-
   // const filteredData = parsedData ? ExcelParser.parseExcelData(parsedData) : [];
 
   const dynamicTabs = useMemo((): TabConfig[] => {
