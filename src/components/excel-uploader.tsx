@@ -13,7 +13,6 @@ interface ExcelUploaderProps {
   onDataLoad: (data: ParsedExcelData) => void
 }
 
-
 export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [fileName, setFileName] = useState<string>("")
@@ -106,7 +105,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
         if (!response.ok) {
           const error = await response.json();
           console.error("Erreur entreprises:", error);
-          // Don't throw - continue with supervisors
         } else {
           const result = await response.json();
           results.companies = result.data;
