@@ -90,3 +90,142 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+export async function getFiliereDistribution() {
+  return await Student.aggregate([
+    {
+      $group: {
+        _id: '$filiere',
+        nombreEtudiants: { $sum: 1 },
+        moyenneNotes: { $avg: '$note' },
+        anneesActives: { $addToSet: '$annee' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        filiere: '$_id',
+        nombreEtudiants: 1,
+        moyenneNotes: { $round: ['$moyenneNotes', 2] },
+        nombreAnneesActives: { $size: '$anneesActives' }
+      }
+    },
+    { $sort: { nombreEtudiants: -1 } }
+  ]);
+}
+
+export async function getYearlyStats() {
+  return await Student.aggregate([
+    {
+      $group: {
+        _id: '$annee',
+        nombreEtudiants: { $sum: 1 },
+        moyenneNotes: { $avg: '$note' },
+        nombreFilieres: { $addToSet: '$filiere' },
+        nombreEntreprises: { $addToSet: '$companyId' },
+        nombreEncadrants: { $addToSet: '$supervisorId' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        annee: '$_id',
+        nombreEtudiants: 1,
+        moyenneNotes: { $round: ['$moyenneNotes', 2] },
+        nombreFilieres: { $size: '$nombreFilieres' },
+        nombreEntreprises: { $size: '$nombreEntreprises' },
+        nombreEncadrants: { $size: '$nombreEncadrants' }
+      }
+    },
+    { $sort: { annee: -1 } }
+  ]);
+}
+
+export async function getGradesByFiliere(filiere?: string | null, year?: string | null) {
+  const matchStage: any = {};
+  if (filiere) matchStage.filiere = filiere;
+  if (year) matchStage.annee = parseInt(year);
+  
+  return await Student.aggregate([
+    { $match: matchStage },
+    {
+      $group: {
+        _id: {
+          filiere: '$filiere',
+          annee: '$annee'
+        },
+        nombreEtudiants: { $sum: 1 },
+        moyenneNotes: { $avg: '$note' },
+        noteMin: { $min: '$note' },
+        noteMax: { $max: '$note' },
+        ecartType: { $stdDevPop: '$note' },
+        notes: { $push: '$note' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        filiere: '$_id.filiere',
+        annee: '$_id.annee',
+        nombreEtudiants: 1,
+        moyenneNotes: { $round: ['$moyenneNotes', 2] },
+        noteMin: { $round: ['$noteMin', 2] },
+        noteMax: { $round: ['$noteMax', 2] },
+        ecartType: { $round: ['$ecartType', 2] },
+        mediane: {
+          $let: {
+            vars: {
+              sortedNotes: {
+                $sortArray: { input: '$notes', sortBy: 1 }
+              }
+            },
+            in: {
+              $arrayElemAt: [
+                '$$sortedNotes',
+                { $floor: { $divide: [{ $size: '$$sortedNotes' }, 2] } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    { $sort: { annee: -1, filiere: 1 } }
+  ]);
+}
+
+export async function getPopularDomains() {
+  return await Student.aggregate([
+    {
+      $lookup: {
+        from: 'companies',
+        localField: 'companyId',
+        foreignField: '_id',
+        as: 'company'
+      }
+    },
+    { $unwind: '$company' },
+    {
+      $group: {
+        _id: '$company.secteur',
+        nombreEtudiants: { $sum: 1 },
+        moyenneNotes: { $avg: '$note' },
+        filieres: { $addToSet: '$filiere' },
+        companies: { $addToSet: '$company.nom' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        secteur: '$_id',
+        nombreEtudiants: 1,
+        moyenneNotes: { $round: ['$moyenneNotes', 2] },
+        nombreFilieres: { $size: '$filieres' },
+        nombreEntreprises: { $size: '$companies' },
+        popularityScore: {
+          $multiply: ['$nombreEtudiants', '$moyenneNotes']
+        }
+      }
+    },
+    { $sort: { popularityScore: -1 } }
+  ]);
+}

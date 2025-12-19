@@ -1,9 +1,7 @@
-// app/api/student/batch/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Supervisor from '@/models/Supervisor';
 import mongoose from 'mongoose';
-import { debug } from 'console';
 import { SupervisorDTO } from '@/dto/supervisor.dto';
 
 const BATCH_SIZE = 100;

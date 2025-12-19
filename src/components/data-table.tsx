@@ -62,14 +62,12 @@ const filterBySearch = <T extends Record<string, any>>(items: T[]): T[] => {
           return itemStr.includes(query)
         })
       }
-      
-      // ✅ Gérer les objets (cas rare mais possible)
+
       if (typeof value === 'object') {
         const jsonStr = JSON.stringify(value).toLowerCase()
         return jsonStr.includes(query)
       }
       
-      // ✅ Conversion simple en string (gère string, number, boolean)
       const searchableValue = String(value).toLowerCase()
       return searchableValue.includes(query)
     })
@@ -110,9 +108,7 @@ const filterBySearch = <T extends Record<string, any>>(items: T[]): T[] => {
       }
 
       result = filterByYear(result)
-
       result = filterBySearch(result)
-
       return result
   }
 
