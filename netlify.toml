@@ -1,8 +1,29 @@
+# Netlify configuration for Next.js 15 with MongoDB
+
 [build]
   command = "npm run build"
+  publish = ".next"
 
 [functions]
   node_bundler = "esbuild"
-  
+  external_node_modules = ["mongoose"]
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Environment variables (set in Netlify UI instead)
+# MONGODB_URI = "your_connection_string"
+
+# Redirects are handled by Next.js config, but you can add custom ones here
+# [[redirects]]
+#   from = "/api/*"
+#   to = "/.netlify/functions/:splat"
+#   status = 200
+
+# Headers for API routes
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
