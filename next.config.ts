@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
- async redirects() {
+  async redirects() {
     return [
       {
         source: '/',
@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  
 };
 
 export default nextConfig;

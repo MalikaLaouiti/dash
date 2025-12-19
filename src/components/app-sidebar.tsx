@@ -62,7 +62,7 @@ export function AppSidebar( ) {
     },
     {
       title: "Sociéte",
-      url: "#",
+      url: "/societes",
       icon: Building2,
     },
   {
