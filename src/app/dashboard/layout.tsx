@@ -3,11 +3,10 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useState } from "react";
 import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser";
+import { useData } from "@/Context/DataContext";
 
 
 export default function RootLayout({ children, }: Readonly<{ children: React.ReactNode; }>) {
-  const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [searchFilters, setSearchFilters] = useState({
     students: true,
@@ -15,19 +14,13 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
     supervisors: true,
   })
   
-  const handleYearSelect = (year: string) => {
-    setSelectedYear(year);
-  };
+ 
   
-  const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters, selectedYear || undefined) : [];
+  // const filteredData = parsedData ? ExcelParser.searchData(parsedData, searchQuery, searchFilters, selectedYear || undefined) : [];
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
-        <AppSidebar
-          selectedYear={selectedYear|| undefined}
-          onYearSelect={handleYearSelect}
-          availableYears={parsedData?.summary.yearsCovered || []}
-        />
+        <AppSidebar/>
         <main className="flex-1 flex flex-col overflow-hidden">
           <SidebarTrigger />
           {children}

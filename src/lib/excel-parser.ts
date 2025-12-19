@@ -1,797 +1,440 @@
-export interface Student {
-  codeProjet: string
-  cin: number
-  prenom: string
-  email?: string
-  telephone?: string
-  filiere: string
-  annee: string
-  titreProjet?: string
-  score?: number
-  companyId?: string
-  localisation_type?: "interne" | "externe"
-  encadreurAcId?: string
-  encadreurProId?: string
-  dureeStage?: string
-  debutStage?: Date
-  finStage?: Date
-  collaboration: "binome" | "monome"
-  collaborateur?: Student
-  ficheInformation?: string
-  cahierCharge?: string
+
+import { StudentDTO } from "@/dto/student.dto";
+import { SupervisorDTO } from "@/dto/supervisor.dto";
+import { CompanyDTO } from "@/dto/company.dto";
+
+function normalizeCompanyName(name: string): string {
+  if (!name || typeof name !== "string") return "";
+  const cleaned = name.trim();
+  if (cleaned.length === 0) return "";
+  return cleaned
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['']/g, " ")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, "")
+    .replace("societe", "")
+    .replace("ste", "");
 }
 
-export interface Company {
-  id: string
-  nom: string
-  secteur: string
-  encadrantPro :Supervisor[]
-  adresse?: string
-  contact?: string
-  email?: string
-  telephone?: string
-  nombreStagiaires: number
-  annee: string
-}
-
-
-export interface Supervisor {
-  id: string
-  prenom: string
-  email?: string
-  telephone?: string
-  nombreEtudiants: number
-  annee: string
-  categorie: "professionnel" | "academique"
-}
 
 export interface ParsedExcelData {
-  students: Student[]
-  companies: Company[]
-  supervisors: Supervisor[]
-  rawData: any
+  students: StudentDTO[];
+  companies: CompanyDTO[];
+  supervisors: SupervisorDTO[];
   summary: {
-    totalStudents: number
-    totalCompanies: number
-    totalSupervisors: {
-      academiques: number
-      professionnels: number
-      total: number
-    }
-    yearsCovered: string[]
-    collaborations: {
-      binomes: number
-      monomes: number
-    }
-    localisations: {
-      internes: number
-      externes: number
-    }
-    deduplication: {
-      studentsRemoved: number
-      companiesRemoved: number
-      supervisorsRemoved: number
-    }
-  }
+    totalStudents: number;
+    totalCompanies: number;
+    totalSupervisors: number;
+    yearsCovered: string[];
+  };
 }
 
 export class ExcelParser {
-  
-  // private static supervisorIdCounter = 1
+  private static readonly HEADER_MAPPINGS = {
+    students: {
+      codeProject: ["code projet", "code"],
+      cin: ["cin"],
+      prenom: ["prenom"],
+      filiere: ["filiére", "specialisation", "filiére"],
+      email: ["email", "mail"],
+      telephone: ["téléphone", "phone number"],
+      titreProjet: ["titre du sujet"],
+      score: ["score", "note"],
+      companyId: ["société", "entreprise", "company"],
+      localisationType: ["type", "interne/externe"],
+      encadreurAc: ["encadrant isimm", "academic supervisor", "professeur"],
+      encadreurPro: ["encadrant professionnel", "professional supervisor"],
+      dureeStage: ["durée stage", "duree", "duration"],
+      debutStage: ["début stage", "debut", "start"],
+      finStage: ["fin stage", "end"],
+      collaboration: ["group type"],
+      ficheInformation: ["fiche", "fiche d'informations scannée"],
+      cahierCharge: ["cahier charges", "charge"],
+    },
+    companies: {
+      nom: ["société"],
+      secteur: ["domaine d'activités", "secteur", "sector"],
+      adresse: ["adresse de société", "address"],
+      email: ["e-mail encadrant professionnel"],
+      telephone: ["phone number encadrant professionnel"],
+      encadrantPro: ["encadrant professionnel", "professional supervisor"],
+    },
+    supervisors: {
+      prenomAc: ["encadrant isimm"],
+      emailAc: ["e-mail encadrant isimm"],
+      telephoneAc: ["phone number encadrant isimm"],
+      prenomPro: ["encadrant professionnel"],
+      emailPro: ["e-mail encadrant professionnel"],
+      telephonePro: ["phone number encadrant professionnel"],
+    },
+  };
 
-  // // Helper method to generate unique IDs
-  // private static generateUniqueId(type: string, identifier: string, year: string): string {
-  //   return `${type}_${year}_${identifier.replace(/[^a-zA-Z0-9]/g, '_')}`
-  // }
-
-  // // Helper method to check if supervisor exists in company's encadrantPro list
-  // private static supervisorExistsInCompany(company: Company, supervisorPrenom: string): boolean {
-  //   return company.encadrantPro.some(enc => enc.prenom.toLowerCase() === supervisorPrenom.toLowerCase())
-  // }
-
-  // // Helper method to check if student project was already counted for supervisor
-  // private static isProjectAlreadyCounted(supervisor: Supervisor, codeProjet: string): boolean {
-  //   // We'll track this in a separate field or use the existing logic
-  //   // For now, we'll assume each supervisor tracks their projects differently
-  //   return false // This will be enhanced based on your specific needs
-  // }
-
-  // // Smart deduplication methods based on your requirements
-  // private static deduplicateCompanies(companies: Company[]): { companies: Company[], removed: number } {
-  //   const seen = new Map<string, Company>()
-  //   const unique: Company[] = []
-  //   let removed = 0
-
-  //   for (const company of companies) {
-  //    const key = company.nom.toLowerCase().trim()
-      
-  //     if (seen.has(key)) {
-  //       removed++
-  //       const existing = seen.get(key)!
-        
-  //       // Merge encadrantPro arrays - only add if not already exists
-  //       for (const newEncadrant of company.encadrantPro) {
-  //         if (!this.supervisorExistsInCompany(existing, newEncadrant.prenom)) {
-  //           existing.encadrantPro.push({
-  //             ...newEncadrant,
-  //             id: `supervisor_pro_${this.supervisorIdCounter++}`
-  //           })
-  //         }
-  //       }
-        
-  //       // Merge other data if missing
-  //       if (!existing.secteur && company.secteur) existing.secteur = company.secteur
-  //       if (!existing.adresse && company.adresse) existing.adresse = company.adresse
-  //       if (!existing.contact && company.contact) existing.contact = company.contact
-  //       if (!existing.email && company.email) existing.email = company.email
-  //       if (!existing.telephone && company.telephone) existing.telephone = company.telephone
-  //       company.nombreStagiaires = 0
-        
-  //     } else {
-  //       // Assign auto-increment ID
-  //       company.id = `company_${this.companyIdCounter++}`
-  //       seen.set(key, company)
-  //       unique.push(company)
-  //     }
-  //   }
-
-  //   return { companies: unique, removed }
-  // }
-
-  // private static deduplicateSupervisors(supervisors: Supervisor[], students: Student[]): { supervisors: Supervisor[] ,removed: number }
-  // {
-  //   const seen = new Map<string, Supervisor>()
-  //   const unique: Supervisor[] = []
-  //   let removed = 0
-
-  //   // Phase 1: Collecter les superviseurs uniques
-  //   for (const supervisor of supervisors) {
-  //     if (!supervisor.prenom || supervisor.prenom.trim() === '') continue
-
-  //     // Clé unique: prenom + categorie (sans année)
-  //     const normalizedPrenom = supervisor.prenom.toLowerCase().trim().replace(/\s+/g, ' ')
-  //     const key = `${normalizedPrenom}_${supervisor.categorie}`
-      
-  //     if (seen.has(key)) {
-  //       removed++
-  //       const existing = seen.get(key)!
-        
-  //       // Enrichir les données manquantes
-  //       if (!existing.email && supervisor.email) existing.email = supervisor.email
-  //       if (!existing.telephone && supervisor.telephone) existing.telephone = supervisor.telephone
-  //     } else {
-  //       // Nouveau superviseur
-  //       const idCounter = supervisor.categorie === 'academique' 
-  //         ? this.supervisorAcademiqueIdCounter++ 
-  //         : this.supervisorProfessionnelIdCounter++
-        
-  //       supervisor.id = `supervisor_${supervisor.categorie}_${idCounter}`
-  //       supervisor.nombreEtudiants = 0 // Reset, sera calculé plus tard
-  //       supervisor.prenom = normalizedPrenom
-        
-  //       seen.set(key, supervisor)
-  //       unique.push(supervisor)
-  //     }
-  //   }
-
-  //   // Phase 2: Compter les étudiants par codeProjet unique
-  //   this.countStudentsForSupervisors(unique, students)
-
-  //   return { supervisors: unique, removed }
-  // }
-
-   // Global counters for auto-increment IDs
-  private static companyIdCounter = 1
-  private static supervisorAcademiqueIdCounter = 1
-  private static supervisorProfessionnelIdCounter = 1
-
-  private static deduplicateCompanies(companies: Company[]): { 
-    companies: Company[]
-    removed: number 
-  } {
-    const seen = new Map<string, Company>()
-    const unique: Company[] = []
-    let removed = 0
-
-    for (const company of companies) {
-      if (!company.nom || company.nom.trim() === '') continue
-
-      // Clé unique: nom normalisé (sans année)
-      const normalizedNom = company.nom.toLowerCase().trim().replace(/\s+/g, ' ')
-      
-      if (seen.has(normalizedNom)) {
-        removed++
-        const existing = seen.get(normalizedNom)!
-        
-        // Fusionner les encadrants professionnels (éviter doublons)
-        for (const newEncadrant of company.encadrantPro) {
-          if (!newEncadrant.prenom || newEncadrant.prenom.trim() === '') continue
-          
-          const normalizedPrenom = newEncadrant.prenom.toLowerCase().trim()
-          const encadrantExists = existing.encadrantPro.some(
-            enc => enc.prenom.toLowerCase().trim() === normalizedPrenom
-          )
-          
-          if (!encadrantExists) {
-            existing.encadrantPro.push({
-              ...newEncadrant,
-              id: `supervisor_pro_${this.supervisorProfessionnelIdCounter++}`
-            })
-          }
-        }
-        
-        // Enrichir les données manquantes (ne pas écraser)
-        if (!existing.secteur && company.secteur) existing.secteur = company.secteur
-        if (!existing.adresse && company.adresse) existing.adresse = company.adresse
-        if (!existing.contact && company.contact) existing.contact = company.contact
-        if (!existing.email && company.email) existing.email = company.email
-        if (!existing.telephone && company.telephone) existing.telephone = company.telephone
-        
-        
-      } else {
-        
-        company.id = `company_${this.companyIdCounter++}`
-        company.nombreStagiaires = 0 // Reset, sera calculé plus tard
-        
-        // Assigner IDs aux encadrants
-        company.encadrantPro = company.encadrantPro.map(enc => ({
-          ...enc,
-          id: `supervisor_pro_${this.supervisorProfessionnelIdCounter++}`,
-          nombreEtudiants: 0 // Reset, sera calculé plus tard
-        }))
-        
-        seen.set(normalizedNom, company)
-        unique.push(company)
-      }
-    }
-
-    return { companies: unique, removed }
+  private static findColumnIndex(headers: string[], aliases: string[]): number {
+    return headers.findIndex((header) =>
+      aliases.some((alias) => header.includes(alias))
+    );
   }
 
-  private static deduplicateSupervisors(
-    supervisors: Supervisor[], 
-    students: Student[]
-  ): { 
-    supervisors: Supervisor[]
-    removed: number 
-  } {
-    const seen = new Map<string, Supervisor>()
-    const unique: Supervisor[] = []
-    let removed = 0
+  private static extractColumnIndices(
+    headers: string[],
+    type: keyof typeof ExcelParser.HEADER_MAPPINGS
+  ) {
+    const indices: Record<string, number> = {};
+    const mappings = ExcelParser.HEADER_MAPPINGS[type];
 
-    // Phase 1: Collecter les superviseurs uniques
-    for (const supervisor of supervisors) {
-      if (!supervisor.prenom || supervisor.prenom.trim() === '') continue
-
-      // Clé unique: prenom + categorie (sans année)
-      const normalizedPrenom = supervisor.prenom.toLowerCase().trim().replace(/\s+/g, ' ')
-      const key = `${normalizedPrenom}_${supervisor.categorie}`
-      
-      if (seen.has(key)) {
-        removed++
-        const existing = seen.get(key)!
-        
-        // Enrichir les données manquantes
-        if (!existing.email && supervisor.email) existing.email = supervisor.email
-        if (!existing.telephone && supervisor.telephone) existing.telephone = supervisor.telephone
-      } else {
-        // Nouveau superviseur
-        const idCounter = supervisor.categorie === 'academique' 
-          ? this.supervisorAcademiqueIdCounter++ 
-          : this.supervisorProfessionnelIdCounter++
-        
-        supervisor.id = `supervisor_${supervisor.categorie}_${idCounter}`
-        supervisor.nombreEtudiants = 0 // Reset, sera calculé plus tard
-        supervisor.prenom = normalizedPrenom
-        
-        seen.set(key, supervisor)
-        unique.push(supervisor)
-      }
+    for (const [key, aliases] of Object.entries(mappings)) {
+      indices[key] = this.findColumnIndex(headers, aliases);
     }
-
-    // Phase 2: Compter les étudiants par codeProjet unique
-    this.countStudentsForSupervisors(unique, students)
-
-    return { supervisors: unique, removed }
+    return indices;
   }
 
-  /**
-   * CORRECTION 3: Compter les étudiants correctement
-   * Un même codeProjet ne doit être compté qu'une seule fois par superviseur
-   */
-  private static countStudentsForSupervisors(
-    supervisors: Supervisor[],
-    students: Student[]
-  ): void {
-    // Map: supervisorId -> Set<codeProjet>
-    const projectsBySupervisor = new Map<string, Set<string>>()
-
-    for (const student of students) {
-      if (!student.codeProjet || student.codeProjet.trim() === '') continue
-
-      // Compter pour encadrant académique
-      if (student.encadreurAcId && student.encadreurAcId.trim() !== '') {
-        const normalizedName = student.encadreurAcId.toLowerCase().trim().replace(/\s+/g, ' ')
-        const academicSupervisor = supervisors.find(s => 
-          s.categorie === 'academique' && 
-          s.prenom.toLowerCase() === normalizedName
-        )
-        
-        if (academicSupervisor) {
-          if (!projectsBySupervisor.has(academicSupervisor.id)) {
-            projectsBySupervisor.set(academicSupervisor.id, new Set())
-          }
-          
-          const projects = projectsBySupervisor.get(academicSupervisor.id)!
-          if (!projects.has(student.codeProjet)) {
-            projects.add(student.codeProjet)
-            academicSupervisor.nombreEtudiants++
-          }
-        }
-      }
-      
-      // Compter pour encadrant professionnel
-      if (student.encadreurProId && student.encadreurProId.trim() !== '') {
-        const normalizedName = student.encadreurProId.toLowerCase().trim().replace(/\s+/g, ' ')
-        const professionalSupervisor = supervisors.find(s => 
-          s.categorie === 'professionnel' && 
-          s.prenom.toLowerCase() === normalizedName
-        )
-        
-        if (professionalSupervisor) {
-          if (!projectsBySupervisor.has(professionalSupervisor.id)) {
-            projectsBySupervisor.set(professionalSupervisor.id, new Set())
-          }
-          
-          const projects = projectsBySupervisor.get(professionalSupervisor.id)!
-          if (!projects.has(student.codeProjet)) {
-            projects.add(student.codeProjet)
-            professionalSupervisor.nombreEtudiants++
-          }
-        }
-      }
-    }
+  private static cleanString(value: any): string {
+    if (value == null) return "";
+    return String(value).trim();
   }
-
-  /**
-   * CORRECTION 4: Compter les stagiaires par société
-   * Basé sur les étudiants qui ont cette société
-   */
-  private static countInternsBySociety(
-    companies: Company[],
-    students: Student[]
-  ): void {
-    for (const company of companies) {
-      const normalizedNom = company.nom.toLowerCase().trim().replace(/\s+/g, ' ')
-      
-      company.nombreStagiaires = students.filter(student => {
-        if (!student.companyId) return false
-        const studentCompany = student.companyId.toLowerCase().trim().replace(/\s+/g, ' ')
-        return studentCompany === normalizedNom
-      }).length
-    }
-  }
-
-  /**
-   * CORRECTION 5: Déduplication des étudiants
-   * Critère: CIN unique
-   */
-  private static deduplicateStudents(students: Student[]): {
-    students: Student[]
-    removed: number
-  } {
-    const seen = new Map<string, Student>()
-    const unique: Student[] = []
-    let removed = 0
-
-    for (const student of students) {
-      if (!student.cin || student.cin.toString().trim() === '') continue
-
-      const normalizedCIN = student.cin.toString().trim()
-      
-      if (seen.has(normalizedCIN)) {
-        removed++
-        // Garder celui avec le plus de données
-        const existing = seen.get(normalizedCIN)!
-        const currentScore = this.calculateCompletenessScore(student)
-        const existingScore = this.calculateCompletenessScore(existing)
-        
-        if (currentScore > existingScore) {
-          seen.set(normalizedCIN, student)
-          const index = unique.findIndex(s => String(s.cin) === normalizedCIN)
-          if (index !== -1) {
-            unique[index] = student
-          }
-        }
-      } else {
-        student.cin = Number(normalizedCIN)
-        seen.set(normalizedCIN, student)
-        unique.push(student)
-      }
-    }
-
-    return { students: unique, removed }
-  }
-
-  /**
-   * Calcule le score de complétude d'un étudiant
-   */
-  private static calculateCompletenessScore(student: Student): number {
-    let score = 0
-    const fields = [
-      'email', 'telephone', 'titreProjet', 'score', 'companyId',
-      'encadreurAcId', 'encadreurProId', 'debutStage', 'finStage',
-      'ficheInformation', 'cahierCharge'
-    ]
+ 
+   private static cleanNumber(value: any): number {
+    if (value == null) return 0;
     
-    fields.forEach(field => {
-      if ((student as any)[field]) score++
-    })
-    
-    return score
+    const num = Number(String(value).replace(/[^\d.-]/g, ''));
+    return isNaN(num) ? 0 : num;
   }
 
-  
-  private static parseStudents(data: any[][], year: string): Student[] {
-    if (data.length < 2) return []
-
-    const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
-    const students: Student[] = []
-    // console.log("Parsing headers:", headers)
-    // Find column indices with safe string operations
-    const indices = {
-      codeProject: headers.findIndex((h) => h && (h.includes("code projet") || h.includes("code"))),
-      cin: headers.findIndex((h) => h && h.includes("cin")),
-      prenom: headers.findIndex((h) => h && h.includes("prenom")),
-      filiere: headers.findIndex((h) => h && (h.includes("filiére") || h.includes("specialisation") || h.includes("filiére"))),
-      email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("téléphone") || h.includes("phone number") )),
-      titreProjet: headers.findIndex((h) => h && (h.includes("titre du sujet") )),
-      score: headers.findIndex((h) => h && (h.includes("score") || h.includes("note"))),
-      companyId: headers.findIndex((h) => h && (h.includes("société") || h.includes("entreprise") || h.includes("company"))),
-      localisationType: headers.findIndex((h) => h && (h.includes("type")  || h.includes("interne/externe"))),
-      encadreurAc: headers.findIndex((h) => h && (h.includes("encadrant isimm") || h.includes("academic supervisor") || h.includes("professeur"))),
-      encadreurPro: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("professional supervisor"))),
-      dureeStage: headers.findIndex((h) => h && (h.includes("durée stage") || h.includes("duree") || h.includes("duration"))),
-      debutStage: headers.findIndex((h) => h && (h.includes("début stage") || h.includes("debut") || h.includes("start"))),
-      finStage: headers.findIndex((h) => h && (h.includes("fin stage") || h.includes("end"))),
-      collaboration: headers.findIndex((h) => h && ( h.includes("group type"))),
-      collaborateur: headers.findIndex((h) => h && (h.includes("collaborateur") || h.includes("deuxième étudiant"))),
-      ficheInformation: headers.findIndex((h) => h && (h.includes("fiche") || h.includes("fiche d'informations scannée"))),
-      cahierCharge: headers.findIndex((h) => h && (h.includes("cahier charges") || h.includes("charge"))),
+  private static parseDate(dateValue: any): Date | undefined {
+    if (!dateValue) return undefined;
+    
+    // Gérer les dates Excel (numériques)
+    if (typeof dateValue === 'number') {
+      const date = new Date((dateValue - 25569) * 86400 * 1000);
+      return isNaN(date.getTime()) ? undefined : date;
     }
+    
+    // Gérer les dates string
+    const date = new Date(dateValue);
+    return isNaN(date.getTime()) ? undefined : date;
+  }
+
+  private static parseStudents(data: any[][], year: string): StudentDTO[] {
+    if (data.length < 2) return [];
+
+    const headers = data[0].map((h) => this.cleanString(h).toLowerCase());
+    const indices = this.extractColumnIndices(headers, "students");
+    const students: StudentDTO[] = [];
 
     for (let i = 1; i < data.length; i++) {
-      const row = data[i]
-      if (!row || row.length === 0) continue
+      const row = data[i];
+      if (!row || row.length === 0) continue;
 
-      // Parse dates safely
-      const parseDate = (dateValue: any): Date | undefined => {
-        if (!dateValue) return undefined
-        const date = new Date(dateValue)
-        return isNaN(date.getTime()) ? undefined : date
-      }
-
-      const student: Student = {
-        codeProjet: indices.codeProject >= 0 ? String(row[indices.codeProject] || "") : "",
-        cin: indices.cin >= 0 ? Number(row[indices.cin]) || 0 : 0,
-        prenom: indices.prenom >= 0 ? String(row[indices.prenom] || "") : "",
-        filiere: indices.filiere >= 0 ? String(row[indices.filiere] || "") : "",
+      const student: StudentDTO = {
+        codeProjet:
+          indices.codeProject >= 0
+            ? this.cleanString(row[indices.codeProject])
+            : "",
+        cin: indices.cin >= 0 ? this.cleanNumber(row[indices.cin]) : 0,
+        prenom:
+          indices.prenom >= 0 ? this.cleanString(row[indices.prenom]) : "",
+        filiere:
+          indices.filiere >= 0 ? this.cleanString(row[indices.filiere]) : "",
         annee: year,
-        email: indices.email >= 0 ? String(row[indices.email] || "") : undefined,
-        telephone: indices.telephone >= 0 ? String(row[indices.telephone] || "") : undefined,
-        titreProjet: indices.titreProjet >= 0 ? String(row[indices.titreProjet] || "") : undefined,
-        score: indices.score >= 0 ? Number(row[indices.score]) || undefined : undefined,
-        companyId: indices.companyId >= 0 ? String(row[indices.companyId] || "") : undefined,
-        localisation_type: indices.localisationType >= 0 ? 
-          (String(row[indices.localisationType] || "").toLowerCase().includes("interne") ? "interne" : "externe") : undefined,
-        encadreurAcId: indices.encadreurAc >= 0 ? String(row[indices.encadreurAc] || "") : undefined,
-        encadreurProId: indices.encadreurPro >= 0 ? String(row[indices.encadreurPro] || "") : undefined,
-        dureeStage: indices.dureeStage >= 0 ? String(row[indices.dureeStage] || "") : undefined,
-        debutStage: indices.debutStage >= 0 ? parseDate(row[indices.debutStage]) :new Date(),
-        finStage: indices.finStage >= 0 ? parseDate(row[indices.finStage]) : new Date(),
-        collaboration: indices.collaboration >= 0 ? 
-          (String(row[indices.collaboration] || "").toLowerCase().includes("binôme") ? "binome" : "monome") : "monome",
-        collaborateur: indices.collaborateur >= 0 ? 
-          { codeProjet: "", cin: 0, prenom: String(row[indices.collaborateur] || ""), filiere: "", annee: year, collaboration: "binome" as const } : undefined,
-        ficheInformation: indices.ficheInformation >= 0 ? String(row[indices.ficheInformation] || "") : undefined,
-        cahierCharge: indices.cahierCharge >= 0 ? String(row[indices.cahierCharge] || "") : undefined,
-      }
+        email:
+          indices.email >= 0
+            ? this.cleanString(row[indices.email]) || undefined
+            : undefined,
+        telephone:
+          indices.telephone >= 0
+            ? this.cleanString(row[indices.telephone]) || undefined
+            : undefined,
+        titreProjet:
+          indices.titreProjet >= 0
+            ? this.cleanString(row[indices.titreProjet]) || undefined
+            : undefined,
+        score:
+          indices.score >= 0
+            ? this.cleanNumber(row[indices.score]) || undefined
+            : undefined,
+        companyId:
+          indices.companyId >= 0
+            ? this.cleanString(row[indices.companyId]) || undefined
+            : undefined,
+        localisation_type: this.determineLocalisationType(
+          row,
+          indices.localisationType
+        ),
+        encadreurAcId:
+          indices.encadreurAc >= 0
+            ? this.cleanString(row[indices.encadreurAc]) || undefined
+            : undefined,
+        encadreurProId:
+          indices.encadreurPro >= 0
+            ? this.cleanString(row[indices.encadreurPro]) || undefined
+            : undefined,
+        dureeStage:
+          indices.dureeStage >= 0
+            ? this.cleanString(row[indices.dureeStage]) || undefined
+            : undefined,
+        debutStage:
+          indices.debutStage >= 0
+            ? this.parseDate(row[indices.debutStage])?.toString()
+            : undefined,
+        finStage:
+          indices.finStage >= 0
+            ? this.parseDate(row[indices.finStage])?.toString()
+            : undefined,
+        collaboration: this.determineCollaboration(row, indices.collaboration),
+        ficheInformation:
+          indices.ficheInformation >= 0
+            ? this.cleanString(row[indices.ficheInformation]) || undefined
+            : undefined,
+        cahierCharge:
+          indices.cahierCharge >= 0
+            ? this.cleanString(row[indices.cahierCharge]) || undefined
+            : undefined,
+      };
 
-      if (student.prenom || student.codeProjet) {
-        students.push(student)
+      if (this.isValidStudent(student)) {
+        students.push(student);
       }
     }
 
-    return students
+    return students;
   }
 
-  private static parseCompanies(data: any[][], year: string): Company[] {
-    if (data.length < 2) return []
+  private static determineLocalisationType(
+    row: any[],
+    index: number
+  ): "interne" | "externe" | undefined {
+    if (index < 0) return undefined;
 
-    const headers = (data[0] || []).map((h: any) => (h != null ? String(h).toLowerCase() : ""))
-    const companies: Company[] = []
+    const value = this.cleanString(row[index]).toLowerCase();
+    return value.includes("interne") ? "interne" : "externe";
+  }
 
-    const indices = {
-      nom: headers.findIndex((h) => h && ( h.includes("société") )),
-      secteur: headers.findIndex((h) => h && (h.includes("domaine d'activités") || h.includes("secteur") || h.includes("sector"))),
-      adresse: headers.findIndex((h) => h && (h.includes("adresse de société") || h.includes("address"))),
-      contact: headers.findIndex((h) => h && h.includes("e-mail encadrant professionnel") || h.includes("contact")),
-      email: headers.findIndex((h) => h && (h.includes("email") || h.includes("mail"))),
-      telephone: headers.findIndex((h) => h && (h.includes("phone number encadrant professionnel") || h.includes("telephone") || h.includes("phone"))),
-      encadrantPro: headers.findIndex((h) => h && (h.includes("encadrant professionnel") || h.includes("professional supervisor"))),
-      stagiaires: headers.findIndex((h) => h && (h.includes("nombre de stagiaires") || h.includes("number of interns"))),
-    }
-    console.log("Indices:", indices)
+  private static determineCollaboration(
+    row: any[],
+    index: number
+  ): "binome" | "monome" {
+    if (index < 0) return "monome";
+
+    const value = this.cleanString(row[index]).toLowerCase();
+    return value.includes("binôme") || value.includes("binome")
+      ? "binome"
+      : "monome";
+  }
+
+  private static isValidStudent(student: StudentDTO): boolean {
+    return !!(student.prenom && student.codeProjet && student.cin);
+  }
+
+  private static parseCompanies(data: any[][], year: string): CompanyDTO[] {
+    if (data.length < 2) return [];
+
+    const headers = data[0].map((h) => this.cleanString(h).toLowerCase());
+    const indices = this.extractColumnIndices(headers, "companies");
+    const companiesMap = new Map<string, CompanyDTO>();
 
     for (let i = 1; i < data.length; i++) {
-      const row = data[i]
-      if (!row || row.length === 0) continue
+      const row = data[i];
+      if (!row || row.length === 0) continue;
 
-      const company: Company = {
-        id: `temp_company_${year}_${i}`, // Will be assigned proper ID during deduplication
-        nom: indices.nom >= 0 ? String(row[indices.nom] || "") : "",
-        secteur: indices.secteur >= 0 ? String(row[indices.secteur] || "") : "",
-        annee: year,
-        encadrantPro: indices.encadrantPro >= 0 ? [
-          {
-            id: `supervisor_pro_${year}_${i}`,
-            prenom: String(row[indices.encadrantPro] || ""),
+      const nomBrut =
+        indices.nom >= 0 ? this.cleanString(row[indices.nom]) : "";
+      if (!nomBrut) continue;
+
+      const nomNormalise = normalizeCompanyName(nomBrut);
+      const companyKey = `${nomNormalise}_${year}`;
+
+      if (!companiesMap.has(companyKey)) {
+        const company: CompanyDTO = {
+          nom: nomBrut,
+          secteur:
+            indices.secteur >= 0 ? this.cleanString(row[indices.secteur]) : "",
+          annee: year,
+          nomNormalise: nomNormalise,
+          adresse:
+            indices.adresse >= 0
+              ? this.cleanString(row[indices.adresse]) || undefined
+              : undefined,
+          email:
+            indices.emailPro >= 0
+              ? [this.cleanString(row[indices.emailPro])]
+              : undefined,
+          telephone:
+            indices.telephonePro >= 0
+              ? [this.cleanString(row[indices.telephonePro])]
+              : undefined,
+          encadrantPro:
+            indices.encadrantPro >= 0
+              ? [this.cleanString(row[indices.encadrantPro]).toLowerCase()]
+              : undefined,
+          nombreStagiaires: 1,
+          lastActivity: new Date().toISOString(),
+        };
+
+        companiesMap.set(companyKey, company);
+      } else {
+        const existingCompany = companiesMap.get(companyKey)!;
+        existingCompany.nombreStagiaires += 1;
+        existingCompany.lastActivity = new Date().toISOString();
+
+        if (indices.email >= 0 && row[indices.email]) {
+          const newEmail = this.cleanString(row[indices.email]);
+          if (newEmail && !existingCompany.email?.includes(newEmail)) {
+            if (!existingCompany.email) existingCompany.email = [];
+            existingCompany.email.push(newEmail);
+          }
+        }
+        if (indices.telephone >= 0 && row[indices.telephone]) {
+          const newTelephone = this.cleanString(row[indices.telephone]);
+          if (
+            newTelephone &&
+            !existingCompany.telephone?.includes(newTelephone)
+          ) {
+            if (!existingCompany.telephone) existingCompany.telephone = [];
+            existingCompany.telephone.push(newTelephone);
+          }
+        }
+        if (indices.encadrantPro >= 0 && row[indices.encadrantPro]) {
+          const newEncadrant = this.cleanString(row[indices.encadrantPro]).toLowerCase();
+          if (
+            newEncadrant &&
+            !existingCompany.encadrantPro?.includes(newEncadrant)
+          ) {
+            if (!existingCompany.encadrantPro)
+              existingCompany.encadrantPro = [];
+            existingCompany.encadrantPro.push(newEncadrant);
+          }
+        }
+      }
+    }
+    // Convertir la Map en tableau
+    const companies = Array.from(companiesMap.values());
+    return companies;
+  }
+
+  private static parseSupervisors(
+    data: any[][],
+    year: string
+  ): SupervisorDTO[] {
+    if (data.length < 2) return [];
+
+    const headers = data[0].map((h) => this.cleanString(h).toLowerCase());
+    const indices = this.extractColumnIndices(headers, "supervisors");
+    const supervisorsMap = new Map<string, SupervisorDTO>();
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (!row || row.length === 0) continue;
+
+      // Superviseur académique
+      if (indices.prenomAc >= 0) {
+        const prenomAc = this.cleanString(row[indices.prenomAc]);
+        const supervisorACKey = `${prenomAc}_academique_${year}`;
+        if (!supervisorsMap.has(supervisorACKey)) {
+          const supervisor: SupervisorDTO = {
+            prenom: prenomAc,
             annee: year,
+            email:
+              indices.emailAc >= 0
+                ? this.cleanString(row[indices.emailAc]) || undefined
+                : undefined,
             nombreEtudiants: 1,
-            categorie: "professionnel" as const
-          }
-        ] : [],
-        adresse: indices.adresse >= 0 ? String(row[indices.adresse] || "") : undefined,
-        contact: indices.contact >= 0 ? String(row[indices.contact] || "") : undefined,
-        email: indices.email >= 0 ? String(row[indices.email] || "") : undefined,
-        telephone: indices.telephone >= 0 ? String(row[indices.telephone] || "") : undefined,
-        nombreStagiaires: indices.stagiaires >= 0 ? Number(row[indices.stagiaires]) || 0 : 0,
-      }
-
-      if (company.nom) {
-        companies.push(company)
-      }
-    }
-
-    return companies
-  }
-  private static parseSupervisors(data: any[][], year: string): Supervisor[] {
-    if (data.length < 2) return []
-  
-    const headers = (data[0] || []).map((h: any) => 
-      (h != null ? String(h).toLowerCase().trim() : "")
-    )
-    const supervisors: Supervisor[] = []
-    
-    // Find indices for BOTH supervisor types
-    const academicIndices = {
-      prenom: headers.findIndex((h) => h.includes("encadrant isimm") && !h.includes("e-mail") && !h.includes("phone")),
-      email: headers.findIndex((h) => h.includes("e-mail encadrant isimm")),
-      telephone: headers.findIndex((h) => h.includes("phone number encadrant isimm")),
-    }
-    
-    const professionalIndices = {
-      prenom: headers.findIndex((h) => h.includes("encadrant professionnel") && !h.includes("e-mail") && !h.includes("phone")),
-      email: headers.findIndex((h) => h.includes("e-mail") && h.includes("encadrant professionnel")),
-      telephone: headers.findIndex((h) => h.includes("phone number encadrant professionnel")),
-    }
-    
-    const sharedIndices = {
-      etudiants: headers.findIndex((h) => h.includes("etudiant") || h.includes("prenom")),
-    }
-    
-    console.log("Academic Indices:", academicIndices)
-    console.log("Professional Indices:", professionalIndices)
-    console.log("Shared Indices:", sharedIndices)
-    
-    // Parse rows
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i]
-      if (!row || row.length === 0) continue
-      
-      // Extract ACADEMIC supervisor if present
-      if (academicIndices.prenom >= 0) {
-        const prenomAcademique = row[academicIndices.prenom] ? String(row[academicIndices.prenom]).trim() : ""
-        
-        if (prenomAcademique) {
-          const academicSupervisor: Supervisor = {
-            id: `temp_supervisor_academique_${year}_${i}`,
-            prenom: prenomAcademique,
-            annee: year,
-            email: academicIndices.email >= 0 ? String(row[academicIndices.email] || "").trim() || undefined : undefined,
-            telephone: academicIndices.telephone >= 0 ? String(row[academicIndices.telephone] || "").trim() || undefined : undefined,
-            nombreEtudiants: 1, // Each row represents one student
-            categorie: "academique",
-          }
-          
-          console.log("Academic Supervisor:", academicSupervisor)
-          supervisors.push(academicSupervisor)
+            telephone:
+              indices.telephoneAc >= 0
+                ? this.cleanString(row[indices.telephoneAc]) || undefined
+                : undefined,
+            categorie: "academique" as const,
+          };
+          supervisorsMap.set(supervisorACKey, supervisor);
+        }
+        else {
+        const existingSupervisorAC = supervisorsMap.get(supervisorACKey)!;
+        existingSupervisorAC.nombreEtudiants += 1;
         }
       }
-      
-      // Extract PROFESSIONAL supervisor if present
-      if (professionalIndices.prenom >= 0) {
-        const prenomProfessionnel = row[professionalIndices.prenom] ? String(row[professionalIndices.prenom]).trim() : ""
-        
-        if (prenomProfessionnel) {
-          const professionalSupervisor: Supervisor = {
-            id: `temp_supervisor_professionnel_${year}_${i}`,
-            prenom: prenomProfessionnel,
+
+      // Superviseur professionnel
+      if (indices.prenomPro >= 0) {
+        const prenomPro = this.cleanString(row[indices.prenomPro]);
+        const supervisorPROKey = `${prenomPro}_professionnel_${year}`;
+        if(!supervisorsMap.has(supervisorPROKey)) {
+          const supervisor: SupervisorDTO = {
+            prenom: prenomPro,
             annee: year,
-            email: professionalIndices.email >= 0 ? String(row[professionalIndices.email] || "").trim() || undefined : undefined,
-            telephone: professionalIndices.telephone >= 0 ? String(row[professionalIndices.telephone] || "").trim() || undefined : undefined,
-            nombreEtudiants: 1, // Each row represents one student
-            categorie: "professionnel",
-          }
-          
-          console.log("Professional Supervisor:", professionalSupervisor)
-          supervisors.push(professionalSupervisor)
+            email:
+              indices.emailPro >= 0
+                ? this.cleanString(row[indices.emailPro]) || undefined
+                : undefined,
+            nombreEtudiants: 1,
+            telephone:
+              indices.telephonePro >= 0
+                ? this.cleanString(row[indices.telephonePro]) || undefined
+                : undefined,
+            categorie: "professionnel" as const,
+          };
+          supervisorsMap.set(supervisorPROKey, supervisor);
+        }
+        else {
+          const existingSupervisorAC = supervisorsMap.get(supervisorPROKey)!;
+          existingSupervisorAC.nombreEtudiants += 1;
         }
       }
     }
-  
-    return supervisors
+    const supervisors = Array.from(supervisorsMap.values());
+    return supervisors;
   }
 
   static parseExcelData(rawExcelData: any): ParsedExcelData {
-    const students: Student[] = []
-    const companies: Company[] = []
-    const supervisors: Supervisor[] = []
-    const yearsCovered: Set<string> = new Set()
+    const students: StudentDTO[] = [];
+    const companies: CompanyDTO[] = [];
+    const supervisors: SupervisorDTO[] = [];
+    const yearsCovered: Set<string> = new Set();
 
     if (!rawExcelData?.sheets) {
-      return {
-        students: [],
-        companies: [],
-        supervisors: [],
-        rawData: rawExcelData,
-        summary: {
-          totalStudents: 0,
-          totalCompanies: 0,
-          totalSupervisors: {
-            academiques: 0,
-            professionnels: 0,
-            total: 0
-          },
-          yearsCovered: [],
-          collaborations: {
-            binomes: 0,
-            monomes: 0
-          },
-          localisations: {
-            internes: 0,
-            externes: 0
-          },
-          deduplication: {
-            studentsRemoved: 0,
-            companiesRemoved: 0,
-            supervisorsRemoved: 0
-          }
-        },
-      }
+      return this.createEmptyResult();
     }
 
-    // Process each sheet
-    Object.entries(rawExcelData.sheets).forEach(([sheetName, sheetData]: [string, any]) => {
-    
-      if (!Array.isArray(sheetData) || sheetData.length === 0) return
+    for (const [sheetName, sheetData] of Object.entries(rawExcelData.sheets)) {
+      if (!Array.isArray(sheetData) || sheetData.length === 0) continue;
 
-      // Extract year from sheet name (e.g., "2024", "Etudiants_2023", etc.)
-      const yearMatch = sheetName.match(/20\d{2}/)
-      const year = yearMatch ? yearMatch[0] : new Date().getFullYear().toString()
-      yearsCovered.add(year)
+      const year = this.extractYearFromSheetName(sheetName);
+      yearsCovered.add(year);
 
-      // Detect data type from headers with safety checks
-      const headers = (sheetData[0] || []).filter((h: null) => h != null)
-      // const dataType = this.detectDataType(headers)
-
-      students.push(...this.parseStudents(sheetData, year))
-      companies.push(...this.parseCompanies(sheetData, year))
-      supervisors.push(...this.parseSupervisors(sheetData, year))
-
-      
-    })
-
-    // Apply smart deduplication
-    const deduplicatedCompanies = this.deduplicateCompanies(companies)
-    const deduplicatedSupervisors = this.deduplicateSupervisors(supervisors, students)
-    
-    // Calculate detailed summary statistics
-    const academiques = deduplicatedSupervisors.supervisors.filter(s => s.categorie === "academique")
-    const professionnels = deduplicatedSupervisors.supervisors.filter(s => s.categorie === "professionnel")
-    
-    // Debug log pour voir la répartition des encadreurs
-    console.log(`=== RÉSULTAT ENCADREURS ===`);
-    console.log(`Encadreurs détectés: ${academiques.length} académiques, ${professionnels.length} professionnels`);
-    const binomes = students.filter(s => s.collaboration === "binome")
-    const monomes = students.filter(s => s.collaboration === "monome")
-    const internes = students.filter(s => s.localisation_type === "interne")
-    const externes = students.filter(s => s.localisation_type === "externe")
+      students.push(...this.parseStudents(sheetData as any[][], year));
+      companies.push(...this.parseCompanies(sheetData as any[][], year));
+      supervisors.push(...this.parseSupervisors(sheetData as any[][], year));
+    }
 
     return {
       students,
-      companies: deduplicatedCompanies.companies,
-      supervisors: deduplicatedSupervisors.supervisors,
-      rawData: rawExcelData,
+      companies,
+      supervisors,
       summary: {
         totalStudents: students.length,
-        totalCompanies: deduplicatedCompanies.companies.length,
-        totalSupervisors: {
-          academiques: academiques.length,
-          professionnels: professionnels.length,
-          total: deduplicatedSupervisors.supervisors.length
-        },
+        totalCompanies: companies.length,
+        totalSupervisors: supervisors.length,
         yearsCovered: Array.from(yearsCovered).sort().reverse(),
-        collaborations: {
-          binomes: binomes.length,
-          monomes: monomes.length
-        },
-        localisations: {
-          internes: internes.length,
-          externes: externes.length
-        },
-        deduplication: {
-          studentsRemoved: 0, // Students are not deduplicated in this version
-          companiesRemoved: deduplicatedCompanies.removed,
-          supervisorsRemoved: deduplicatedSupervisors.removed
-        }
       },
-    }
+    };
   }
 
-  static searchData(
-    parsedData: ParsedExcelData,
-    query: string,
-    filters: { students: boolean; companies: boolean; supervisors: boolean },
-    selectedYear?: string,
-  ) {
-    const results: any[] = []
-    const searchTerm = query.toLowerCase()
+  private static extractYearFromSheetName(sheetName: string): string {
+    const yearMatch = sheetName.match(/20\d{2}/);
+    return yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
+  }
 
-    if (filters.students) {
-      const filteredStudents = parsedData.students.filter((student) => {
-        const matchesYear = !selectedYear || student.annee === selectedYear
-        const matchesSearch =
-          !query ||
-          student.prenom.toLowerCase().includes(searchTerm) ||
-          student.filiere.toLowerCase().includes(searchTerm) ||
-          (student.companyId && student.companyId.toLowerCase().includes(searchTerm)) ||
-          (student.encadreurAcId && student.encadreurAcId.toLowerCase().includes(searchTerm)) ||
-          (student.encadreurProId && student.encadreurProId.toLowerCase().includes(searchTerm))
-
-        return matchesYear && matchesSearch
-      })
-
-      results.push(...filteredStudents.map((s) => ({ ...s, type: "student" })))
-    }
-
-    if (filters.companies) {
-      const filteredCompanies = parsedData.companies.filter((company) => {
-        const matchesYear = !selectedYear || company.annee === selectedYear
-        const matchesSearch =
-          !query || company.nom.toLowerCase().includes(searchTerm) || company.secteur.toLowerCase().includes(searchTerm)
-
-        return matchesYear && matchesSearch
-      })
-
-      results.push(...filteredCompanies.map((c) => ({ ...c, type: "company" })))
-    }
-
-    if (filters.supervisors) {
-      const filteredSupervisors = parsedData.supervisors.filter((supervisor) => {
-        const matchesYear = !selectedYear || supervisor.annee === selectedYear
-        const matchesSearch =
-          !query ||
-          supervisor.prenom.toLowerCase().includes(searchTerm) ||
-          supervisor.categorie.toLowerCase().includes(searchTerm)
-
-        return matchesYear && matchesSearch
-      })
-
-      results.push(...filteredSupervisors.map((s) => ({ ...s, type: "supervisor" })))
-    }
-
-    return results
+  private static createEmptyResult(): ParsedExcelData {
+    return {
+      students: [],
+      companies: [],
+      supervisors: [],
+      summary: {
+        totalStudents: 0,
+        totalCompanies: 0,
+        totalSupervisors: 0,
+        yearsCovered: [],
+      },
+    };
   }
 }
