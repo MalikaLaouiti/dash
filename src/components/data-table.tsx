@@ -4,8 +4,8 @@
 import * as React from "react"
 import { Table, TableBody, TableHead, TableHeader,TableRow } from "@/components/ui/table"
 import { type ParsedExcelData } from "@/lib/excel-parser"
-import { TableRows } from "@/components/tableRow"
-import { DetailView } from "@/components/ViewDetails"
+import { TableRows } from "@/components/table-row"
+import { DetailView } from "@/components/view-details"
 import { PaginationControls } from "@/components/pagination"
 
 interface DataTableProps {
