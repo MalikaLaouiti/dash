@@ -175,10 +175,7 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
       onDataLoad(parsedData)
       setFileName("Données chargées depuis la base de données")
       setUploadStatus("success")
-
-      console.log("✅ Données chargées depuis MongoDB:", parsedData)
     } catch (error) {
-      console.error("❌ Erreur lors du chargement depuis la DB:", error)
       setUploadStatus("error")
     } finally {
       setIsLoadingFromDB(false)

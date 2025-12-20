@@ -25,7 +25,7 @@ export async function connectDB() {
       bufferCommands: false,
     };
 
-    console.log('🔄 Creating new MongoDB connection...');
+    console.log('Creating new MongoDB connection...');
     
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       console.log(' MongoDB connected successfully');

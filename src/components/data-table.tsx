@@ -45,17 +45,14 @@ const filterBySearch = <T extends Record<string, any>>(items: T[]): T[] => {
   
   return items.filter(item => {
     return Object.entries(item).some(([key, value]) => {
-      // Ignorer les champs techniques
       if (['id', '_id', 'createdAt', 'updatedAt', '__v'].includes(key)) {
         return false
       }
       
-      // Gérer null/undefined
       if (value === null || value === undefined) {
         return false
       }
       
-      // ✅ Gérer les tableaux (pour email, telephone, etc.)
       if (Array.isArray(value)) {
         return value.some(item => {
           const itemStr = String(item).toLowerCase()
