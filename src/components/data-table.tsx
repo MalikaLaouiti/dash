@@ -133,7 +133,7 @@ const filterBySearch = <T extends Record<string, any>>(items: T[]): T[] => {
             <TableHead>Nom & Prénom</TableHead>
             <TableHead>CIN</TableHead>
             <TableHead>Filière</TableHead>
-            <TableHead>Score</TableHead>
+            <TableHead>Note PFE</TableHead>
             <TableHead>Titre Projet</TableHead>
             <TableHead>Année</TableHead>
             <TableHead className="w-[80px]">Actions</TableHead>

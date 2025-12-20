@@ -1,4 +1,3 @@
-// components/data-table/detail-view.tsx
 "use client"
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -7,7 +6,7 @@ interface DetailViewProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   selectedItem: any
-  activeTab: "students" | "companies" | "supervisors" | "supervisors-academic" | "supervisors-professional"
+  activeTab: "students" | "companies" | "supervisors-academic" | "supervisors-professional"
 }
 
 export function DetailView({ isOpen, onOpenChange, selectedItem, activeTab }: DetailViewProps) {
@@ -45,7 +44,7 @@ function StudentDetail({ student }: { student: any }) {
         <DetailField label="CIN" value={student.cin} />
         <DetailField label="Code Projet" value={student.codeProjet} className="font-mono" />
         <DetailField label="Filière" value={student.filiere} />
-        <DetailField label="Score" value={student.score} className="font-semibold" />
+        <DetailField label="Note PFE" value={student.score} className="font-semibold" />
         <DetailField label="Année" value={student.annee} />
         <DetailField label="Titre du Projet" value={student.titreProjet} span={2} />
         <DetailField label="Collaboration" value={student.collaboration} />
