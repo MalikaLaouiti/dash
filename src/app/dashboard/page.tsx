@@ -175,9 +175,9 @@ export default function DashHome() {
         )}
         {dynamicTabs.length > 0 && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex flex-wrap gap-2 w-full" style={{ gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)` }}>
+            <TabsList className="flex flex-wrap gap-4 w-full" style={{ gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)` }}>
               {dynamicTabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex-1 min-w-[120px] max-w-[200px]">
+                <TabsTrigger key={tab.id} value={tab.id} className="flex-1 min-w-[150px] max-w-[250px]">
                   {tab.label} {tab.count > 0 && `(${tab.count})`}
                 </TabsTrigger>
               ))}
