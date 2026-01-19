@@ -419,7 +419,8 @@ export class ExcelParser {
   }
 
   private static extractYearFromSheetName(sheetName: string): string {
-    const yearMatch = sheetName.match(/20\d{2}/);
+    const yearMatch = sheetName.match(/(?<=-)\d{4}/);
+    console.log('Extracted year from sheet name:', sheetName, '->', yearMatch![0] , 'current year');
     return yearMatch ? yearMatch[0] : new Date().getFullYear().toString();
   }
 
