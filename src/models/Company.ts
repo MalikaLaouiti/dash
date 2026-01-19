@@ -13,7 +13,7 @@ function normalizeCompanyName(name: string): string {
     .trim();
 }
 
-const CompanySchema = new mongoose.Schema({
+const Companies = new mongoose.Schema({
   nom: { 
     type: String, 
     required: true 
@@ -52,6 +52,17 @@ const CompanySchema = new mongoose.Schema({
     default: Date.now 
   }
  
+});
+
+const CompanySchema = new mongoose.Schema({
+  year: {
+    type: String,
+    required: true
+  },
+  companies: {
+    type: [Companies],
+    default: []
+  }
 });
 
 CompanySchema.index(

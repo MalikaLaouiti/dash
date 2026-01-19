@@ -21,10 +21,11 @@ function normalizeCompanyName(name: string): string {
     .trim();
 }
 
+
 export async function POST(request: NextRequest) {
   let totalInserted = 0;
+  let totalUpdated = 0;
   let totalFailed = 0;
-  const insertedIds: string[] = [];
   const errors: any[] = [];
 
   try {
@@ -38,72 +39,137 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+
+    const companiesByYear = rawCompanies.reduce((acc, company) => {
+      const year = company.annee.toString();
+      if (!acc[year]) {
+        acc[year] = [];
+      }
+      acc[year].push(company);
+      return acc;
+    }, {} as Record<string, CompanyDTO[]>);
+
     const BATCH_SIZE = 100;
 
-    for (let i = 0; i < rawCompanies.length; i += BATCH_SIZE) {
-      const batch = rawCompanies.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-
+    for (const [year, companies] of Object.entries(companiesByYear) as [string, CompanyDTO[]][]) {
       try {
-        const normalizedBatch = batch.map(company => ({
-          ...company,
-          nomNormalise: normalizeCompanyName(company.nom),
-          annee: Number(company.annee),
-          nombreStagiaires: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          lastActivity: new Date()
-        }));
-        const result = await Company.insertMany(normalizedBatch, { 
-          ordered: false 
-        });
+        // S'assurer que le document année existe
+        await Company.findOneAndUpdate(
+          { year },
+          { $setOnInsert: { year, companies: [] } },
+          { upsert: true, new: true }
+        );
 
-        totalInserted += result.length;
+        // Récupérer toutes les sociétés existantes pour cette année
+        const yearDoc = await Company.findOne({ year });
+        const existingCompanies = new Map(
+          yearDoc?.companies?.map((c: any) => [c.nomNormalise, c]) || []
+        );
 
-        const newIds = result.map(doc => doc._id.toString());
-        insertedIds.push(...newIds);
-      } catch (error: any) {  
-        if (error.writeErrors) {
-          const successfulInBatch = batch.length - error.writeErrors.length;
-          totalInserted += successfulInBatch;
-          totalFailed += error.writeErrors.length;
+        // Traiter par batch
+        for (let i = 0; i < companies.length; i += BATCH_SIZE) {
+          const batch = companies.slice(i, i + BATCH_SIZE);
+          const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
-          error.writeErrors.forEach((writeError: any) => {
-            errors.push({
-              batch: batchNumber,
-              index: writeError.index,
-              code: writeError.code,
-              message: writeError.errmsg,
-              document: {
-                nom: batch[writeError.index]?.nom,
-                annee: batch[writeError.index]?.annee
+          try {
+            const companiesToInsert: any[] = [];
+            const companiesToUpdate: any[] = [];
+
+            for (const company of batch) {
+              const nomNormalise = normalizeCompanyName(company.nom);
+
+              if (existingCompanies.has(nomNormalise)) {
+                // Société existe - préparer mise à jour
+                companiesToUpdate.push({
+                  nomNormalise,
+                  increment: 1
+                });
+              } else {
+                // Nouvelle société - préparer insertion
+                companiesToInsert.push({
+                  nom: company.nom,
+                  nomNormalise,
+                  secteur: company.secteur,
+                  annee: year,
+                  adresse: company.adresse,
+                  email: company.email || [],
+                  telephone: company.telephone || [],
+                  nombreStagiaires: 1,
+                  encadrantPro: company.encadrantPro || [],
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  lastActivity: new Date()
+                });
+                // Ajouter à la map pour éviter les doublons dans le même batch
+                existingCompanies.set(nomNormalise, true);
               }
+            }
+
+            // Insérer les nouvelles sociétés
+            if (companiesToInsert.length > 0) {
+              await Company.findOneAndUpdate(
+                { year },
+                { $push: { companies: { $each: companiesToInsert } } }
+              );
+              totalInserted += companiesToInsert.length;
+            }
+
+            // Mettre à jour les sociétés existantes
+            for (const { nomNormalise, increment } of companiesToUpdate) {
+              await Company.findOneAndUpdate(
+                {
+                  year,
+                  'companies.nomNormalise': nomNormalise
+                },
+                {
+                  $inc: { 'companies.$.nombreStagiaires': increment },
+                  $set: { 
+                    'companies.$.lastActivity': new Date(),
+                    'companies.$.updatedAt': new Date()
+                  }
+                }
+              );
+              totalUpdated++;
+            }
+
+          } catch (error: any) {
+            totalFailed += batch.length;
+            errors.push({
+              year,
+              batch: batchNumber,
+              error: 'Batch processing failed',
+              message: error.message,
+              count: batch.length
             });
-          });
-        } else {
-          totalFailed += batch.length;
-          errors.push({
-            batch: batchNumber,
-            error: 'Batch processing failed',
-            message: error.message
-          });
+          }
         }
+
+      } catch (error: any) {
+        totalFailed += companies.length;
+        errors.push({
+          year,
+          error: 'Failed to process year',
+          message: error.message,
+          count: companies.length
+        });
       }
     }
-    
 
     return NextResponse.json({
       success: true,
       data: {
-        operation: 'insert',
+        operation: 'upsert',
         inserted: totalInserted,
+        updated: totalUpdated,
         failed: totalFailed,
         total: rawCompanies.length,
-        insertedIds: insertedIds.slice(0, 10),
+        yearsProcessed: Object.keys(companiesByYear).length,
         errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
         summary: {
-          batchesProcessed: Math.ceil(rawCompanies.length / BATCH_SIZE),
-         
+          yearBreakdown: Object.entries(companiesByYear).map(([year, companies]) => ({
+            year,
+            count: (companies as CompanyDTO[]).length
+          }))
         }
       }
     }, {
@@ -111,8 +177,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-
-
     return NextResponse.json(
       {
         success: false,

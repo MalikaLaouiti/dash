@@ -82,7 +82,7 @@ export function AppSidebar( ) {
         </div>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">Navigation</SidebarGroupLabel>
+            {/* <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-2">Navigation</SidebarGroupLabel> */}
             <SidebarGroupContent >
               <SidebarMenu >
                 {items.map((item) => (
@@ -98,7 +98,7 @@ export function AppSidebar( ) {
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {item.children?.map((child) => (
-                              <SidebarMenuSubItem key={child.title}>
+                              <SidebarMenuSubItem key={child.title} >
                                 <SidebarMenuSubButton 
                                   asChild
                                   className={selectedYear === child.year ? "bg-accent text-accent-foreground" : ""}
@@ -120,7 +120,7 @@ export function AppSidebar( ) {
                       </SidebarMenuItem>
                     </Collapsible>
                   ) :
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.title} >
                       <SidebarMenuButton asChild>
                         <a href={item.url}>
                           <item.icon />
