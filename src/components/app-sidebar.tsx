@@ -57,7 +57,7 @@ export function AppSidebar( ) {
     },
     {
       title: "Encadrent",
-      url: "/encadrant",
+      url: "/dashboard/encadrant",
       icon: UserStar,
     },
     {

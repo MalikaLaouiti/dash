@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import { DataProvider } from "@/Context/DataContext";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
   description: "Dashboard d'Analyse Stage de l'IsIMM",
 };
 
-export default function RootLayout({ 
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -27,8 +29,16 @@ export default function RootLayout({
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <DataProvider>
-          {children}
-        </DataProvider>       
+          <SidebarProvider>
+            <div className="flex h-screen w-full bg-background">
+              <AppSidebar />
+              <main className="flex-1 flex flex-col overflow-hidden">
+                <SidebarTrigger />
+                {children}
+              </main>
+            </div>
+          </SidebarProvider>
+        </DataProvider>
       </body>
     </html>
   );
