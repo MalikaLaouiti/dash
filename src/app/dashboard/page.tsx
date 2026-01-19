@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
-import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser";
+import { type ParsedExcelData } from "@/lib/excel-parser";
 import { ExcelUploader } from "@/components/excel-uploader";
 import { useData } from "@/Context/DataContext";
 
@@ -34,7 +34,6 @@ export default function DashHome() {
 
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
-
     if (data.summary.yearsCovered.length > 0 && !selectedYear) {
       setSelectedYear(data.summary.yearsCovered[0]);
     }

@@ -1,4 +1,4 @@
-// lib/serialization.ts
+
 export function serializeMongoDoc(doc: any): any {
   if (!doc) return doc;
   

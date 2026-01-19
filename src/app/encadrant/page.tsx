@@ -5,44 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PieChart, Pie, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { Users, BookOpen, Briefcase, TrendingUp, Award } from "lucide-react"
+import { useData } from "@/Context/DataContext";
+import { SupervisorDTO } from "@/dto/supervisor.dto"
+import { StudentDTO } from "@/dto/student.dto"
 
-interface SupervisorDTO {
-  prenom: string
-  email?: string
-  telephone?: string
-  annee: string
-  categorie: "professionnel" | "academique"
-  nombreEtudiants: number
-  createdAt?: string
-  updatedAt?: string
-}
 
-interface StudentDTO {
-  codeProjet: string
-  cin: number
-  prenom: string
-  email?: string
-  telephone?: string
-  filiere: string
-  annee: string
-  titreProjet?: string
-  score?: number
-  companyId?: string
-  localisation_type?: "interne" | "externe"
-  encadreurAcId?: string
-  encadreurProId?: string
-  dureeStage?: string
-  debutStage?: string
-  finStage?: string
-  collaboration: "binome" | "monome"
-  collaborateur?: string
-  ficheInformation?: string
-  cahierCharge?: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-// Mock data - replace with actual API call
 const mockData: SupervisorDTO[] = [
   { prenom: "Ahmed", annee: "2024", categorie: "professionnel", nombreEtudiants: 15, email: "ahmed@example.com" },
   { prenom: "Fatima", annee: "2024", categorie: "academique", nombreEtudiants: 12, email: "fatima@example.com" },
@@ -138,9 +105,11 @@ const mockStudents: StudentDTO[] = [
 ]
 
 export default function DashboardEncadrants() {
-  const supervisors = mockData
-  const students = mockStudents
-
+  const { parsedData, setParsedData, selectedYear, setSelectedYear } = useData();
+  console.log("Parsed Data in Encadrants Dashboard:", parsedData);
+  const supervisors = parsedData ? parsedData.supervisors : mockData
+  const students = parsedData ? parsedData.students : mockStudents
+  
   const stats = useMemo(() => {
     const total = supervisors.length
     const professionnel = supervisors.filter((s) => s.categorie === "professionnel").length

@@ -11,11 +11,10 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
-
+ 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
 
   return (
     <DataContext.Provider value={{ parsedData, setParsedData, selectedYear, setSelectedYear}}>

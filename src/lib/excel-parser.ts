@@ -1,4 +1,3 @@
-
 import { StudentDTO } from "@/dto/student.dto";
 import { SupervisorDTO } from "@/dto/supervisor.dto";
 import { CompanyDTO } from "@/dto/company.dto";
