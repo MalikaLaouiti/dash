@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-
-
 const Companies = new mongoose.Schema({
   nom: { 
     type: String, 
