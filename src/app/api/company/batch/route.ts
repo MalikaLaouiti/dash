@@ -3,21 +3,8 @@ import { connectDB } from "@/lib/mongodb";
 import Company from "@/models/Company";
 import mongoose from "mongoose";
 import { CompanyDTO } from "@/dto/company.dto";
+import { normalizeCompanyName } from "@/lib/excel-parser";
 
-function normalizeCompanyName(name: string): string {
-  if (!name || typeof name !== "string") return "";
-  const cleaned = name.trim();
-  if (cleaned.length === 0) return "";
-  return cleaned
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/['']/g, " ")
-    .replace(/[^\w\s]/g, " ")
-    .replace(/\s+/g, "")
-    .replace("societe", "")
-    .trim();
-}
 
 export async function POST(request: NextRequest) {
   let totalInserted = 0;

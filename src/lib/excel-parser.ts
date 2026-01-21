@@ -2,7 +2,7 @@ import { StudentDTO } from "@/dto/student.dto";
 import { SupervisorDTO } from "@/dto/supervisor.dto";
 import { CompanyDTO } from "@/dto/company.dto";
 
-function normalizeCompanyName(name: string): string {
+export function normalizeCompanyName(name: string): string {
   if (!name || typeof name !== "string") return "";
   const cleaned = name.trim();
   if (cleaned.length === 0) return "";
@@ -14,7 +14,7 @@ function normalizeCompanyName(name: string): string {
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, "")
     .replace("societe", "")
-    .replace("ste", "");
+    .trim();
 }
 
 

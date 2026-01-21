@@ -1,17 +1,6 @@
 import mongoose from 'mongoose';
 
-function normalizeCompanyName(name: string): string {
-  if (!name) return '';
-  
-  return name
-    .toUpperCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w\s]/g, '')
-    .replace(/[\t\s+ ']/g, '')
-    .replace(/\s+/g, '')
-    .trim();
-}
+
 
 const Companies = new mongoose.Schema({
   nom: { 
@@ -73,26 +62,9 @@ CompanySchema.index({ secteur: 1 },{ unique: false });
 
 CompanySchema.index({ nom: 'text', secteur: 'text' },{ unique: false });
 
-// CompanySchema.pre('save', function(next) {
-//   if (this.isModified('nom')) {
-//     this.nomNormalise = normalizeCompanyName(this.nom);
-//   }
-//   next();
-// });
-
-// CompanySchema.pre('findOneAndUpdate', function(next) {
-//   const update: any = this.getUpdate();
-//   if (update.$set && update.$set.nom) {
-//     update.$set.nomNormalise = normalizeCompanyName(update.$set.nom);
-//   } else if (update.$setOnInsert && update.$setOnInsert.nom) {
-//     update.$setOnInsert.nomNormalise = normalizeCompanyName(update.$setOnInsert.nom);
-//   }
-//   next();
-// });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.Company) {
   delete mongoose.models.Company;
 }
 
 export default mongoose.models.Company || mongoose.model('Company', CompanySchema);
-export { normalizeCompanyName };
