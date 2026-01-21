@@ -1,39 +1,6 @@
-import mongoose, { Document,SchemaTypes ,Schema } from 'mongoose';
-import Company from './Company';
+import mongoose, { Schema } from 'mongoose';
 
-// export interface Student extends Document {
-//   codeProjet: string;
-//   cin: number;
-//   prenom: string;
-//   email?: string;
-//   telephone?: string;
-//   filiere: string;
-//   annee: string;
-//   titreProjet?: string;
-//   score?: number;
-//   companyId?: string;
-//   localisation_type?: "interne" | "externe";
-//   encadreurAcId?: string;
-//   encadreurProId?: string;
-//   dureeStage?: string;
-//   debutStage?: Date;
-//   finStage?: Date;
-//   collaboration: "binome" | "monome";
-//   collaborateur?: {
-//     codeProjet: string;
-//     cin: number;
-//     prenom: string;
-//     filiere: string;
-//     annee: string;
-//     collaboration: "binome";
-//   };
-//   ficheInformation?: string;
-//   cahierCharge?: string;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
-
-const StudentSchema = new Schema({
+const students = new Schema({
   codeProjet: { type: String, required: true },
   cin: { type: Number, required: true },
   prenom: { type: String, required: true },
@@ -62,9 +29,20 @@ const StudentSchema = new Schema({
   },
   ficheInformation: { type: String },
   cahierCharge: { type: String }
-}, {
-  collection: 'students'
+}
+);
+
+const StudentSchema = new mongoose.Schema({
+  year: {
+    type: String,
+    required: true
+  },
+  students: {
+    type: [students],
+    default: [] 
+  }
 });
+
 
 // Index pour optimiser les requêtes
 StudentSchema.index({ annee: 1 });
@@ -73,7 +51,7 @@ StudentSchema.index({ score: -1 });
 StudentSchema.index({ encadreurAcId: 1 });
 StudentSchema.index({ encadreurProId: 1 });
 
-console.log(' Student model created for collection:', StudentSchema.get('collection'));
+
 if (process.env.NODE_ENV === 'development' && mongoose.models.Student) {
   delete mongoose.models.Student;
 }
