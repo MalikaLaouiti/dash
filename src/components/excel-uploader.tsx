@@ -48,7 +48,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
           const parsedData = ExcelParser.parseExcelData(rawData)
           saveToDatabase(parsedData);
           setFileName("Données chargées depuis fichier Excel: ")
-          localStorage.setItem("uploaded", 'true');
           onDataLoad(parsedData);
           setUploadStatus("success");
         } catch (error) {
@@ -88,7 +87,6 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
 
       onDataLoad(parsedData)
       setFileName("Données chargées depuis la base de données")
-      localStorage.setItem("uploaded", 'true');
       setUploadStatus("success")
     } catch (error) {
       setUploadStatus("error")

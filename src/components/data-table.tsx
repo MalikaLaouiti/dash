@@ -79,6 +79,7 @@ const filterBySearch = <T extends Record<string, any>>(items: T[]): T[] => {
           result = data?.students || []
         } else if (searchFilters.companies && activeTab === "companies") {
           result = data?.companies || []
+          console.log("Filtered Companies:", result)
         } else if (searchFilters.supervisors && activeTab.includes("supervisors")) {
           result = data?.supervisors || []
           if (activeTab === "supervisors-academic") {

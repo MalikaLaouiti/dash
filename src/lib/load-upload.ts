@@ -82,10 +82,9 @@ export const saveToDatabase = async (parsedData: ParsedExcelData) => {
   
 export const getFromDatabase = async () => {
     try {
-
       const studentsRes = await fetch("/api/student/batch", {
         method: "GET",
-        
+        headers: { "Content-Type": "application/json" },
       });
       
       const supervisorsRes= await fetch("/api/supervisor/batch", {
@@ -93,7 +92,7 @@ export const getFromDatabase = async () => {
         headers: { "Content-Type": "application/json" },
       }); 
       
-      const companiesRes = await fetch("/api/company/batch", {
+      const companiesRes = await fetch("/api/company/batch?page=1&limit=100", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -110,7 +109,7 @@ export const getFromDatabase = async () => {
       studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))
       companiesData.data.forEach((c: CompanyDTO) => yearsSet.add(c.annee))
       supervisorsData.data.forEach((s: SupervisorDTO) => yearsSet.add(s.annee))
-
+      
       return {
         students: studentsData.data as StudentDTO[],
         companies: companiesData.data as CompanyDTO[],
