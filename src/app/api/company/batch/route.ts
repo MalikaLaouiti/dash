@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
-    const year = searchParams.get('year');
+    // const year = searchParams.get('year');
     const secteur = searchParams.get('secteur');
     const search = searchParams.get('search');
 
@@ -204,9 +204,9 @@ export async function GET(request: NextRequest) {
 
     const pipeline: any[] = [];
 
-    if (year) {
-      pipeline.push({ $match: { year } });
-    }
+    // if (year) {
+    //   pipeline.push({ $match: { year } });
+    // }
 
     pipeline.push({ $unwind: '$companies' });
     const matchConditions: any = {};
@@ -276,7 +276,7 @@ export async function GET(request: NextRequest) {
         prevPage: page > 1 ? page - 1 : null
       },
       filters: {
-        year: year || null,
+        // year: year || null,
         secteur: secteur || null,
         search: search || null,
       }
