@@ -8,10 +8,11 @@ import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser"
 import { saveToDatabase , getFromDatabase } from "@/lib/load-upload"
 
 interface ExcelUploaderProps {
-  onDataLoad: (data: ParsedExcelData) => void
+  onDataLoad: (data: ParsedExcelData) => void,
+  year:String
 }
 
-export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
+export function ExcelUploader({ onDataLoad, year }: ExcelUploaderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [fileName, setFileName] = useState<string>("")
   const [isLoadingFromDB, setIsLoadingFromDB] = useState(false)
@@ -71,7 +72,8 @@ export function ExcelUploader({ onDataLoad }: ExcelUploaderProps) {
     setUploadStatus("idle")
 
     try {
-      const data = await getFromDatabase()
+      const data = await getFromDatabase(year)
+      console.log("Données chargées depuis la base de données:", data)
   
       const parsedData: ParsedExcelData = {
         students: data.students,

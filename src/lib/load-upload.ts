@@ -80,9 +80,9 @@ export const saveToDatabase = async (parsedData: ParsedExcelData) => {
   }
 
   
-export const getFromDatabase = async () => {
+export const getFromDatabase = async (year: String) => {
     try {
-      const studentsRes = await fetch("/api/student/batch", {
+      const studentsRes = await fetch("/api/student/batch?year=" + year, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -92,11 +92,11 @@ export const getFromDatabase = async () => {
         headers: { "Content-Type": "application/json" },
       }); 
       
-      const companiesRes = await fetch("/api/company/batch?page=1&limit=100", {
+      const companiesRes = await fetch("/api/company/batch?year=" + year, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      
+
       if (!studentsRes.ok || !supervisorsRes.ok || !companiesRes.ok) {
         throw new Error("Erreur lors de la récupération des données")
       }
@@ -104,6 +104,7 @@ export const getFromDatabase = async () => {
       const studentsData = await studentsRes.json()
       const supervisorsData = await supervisorsRes.json()
       const companiesData = await companiesRes.json()
+      console.log("Données récupérées:", { studentsData, supervisorsData, companiesData })
 
       const yearsSet = new Set<string>()
       studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))

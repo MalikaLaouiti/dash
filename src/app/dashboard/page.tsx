@@ -11,6 +11,7 @@ import { useState, useMemo } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
 import { ExcelUploader } from "@/components/excel-uploader";
 import { useData } from "@/Context/DataContext";
+import { parse } from "path";
 
 interface TabConfig {
   id: string;
@@ -31,9 +32,12 @@ export default function DashHome() {
   const [isSearching, setIsSearching] = useState(false)
   const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null)
   const displayData = searchResults || parsedData;
+  console.log("Données affichées dans le tableau:", displayData);
+  console.log("Données dans le contexte:", parsedData);
 
   const handleDataLoad = (data: ParsedExcelData) => {
     setParsedData(data);
+    console.log("Données chargées dans le contexte:", data);
     if (data.summary.yearsCovered.length > 0 && !selectedYear) {
       setSelectedYear(data.summary.yearsCovered[0]);
     }
@@ -117,7 +121,7 @@ export default function DashHome() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Dashboard d&apos;Analyse Académique</h1>
         </div>
-        <ExcelUploader onDataLoad={handleDataLoad} />
+        <ExcelUploader onDataLoad={handleDataLoad} year={selectedYear!} />
       </div>
       <div className="flex items-center gap-4 pl-9 pr-8 pb-2 border-b">
         <SearchBar

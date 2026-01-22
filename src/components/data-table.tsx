@@ -24,6 +24,7 @@ export function DataTable({ data, activeTab, selectedYear, searchQuery = "",sear
   const [pageSize, setPageSize] = React.useState(10)
   const [selectedItem, setSelectedItem] = React.useState<any>(null)
   const [isDetailOpen, setIsDetailOpen] = React.useState(false)
+  console.log("DataTable received data:", data);
 
   if (!data) {
     return (
