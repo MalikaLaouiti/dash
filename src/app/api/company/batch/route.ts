@@ -194,13 +194,13 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    // const page = parseInt(searchParams.get('page') || '1', 10);
+    // const limit = parseInt(searchParams.get('limit') || '100', 10);
     const year = searchParams.get('year');
     const secteur = searchParams.get('secteur');
     const search = searchParams.get('search');
 
-    const skip = (page - 1) * limit;
+    // const skip = (page - 1) * limit;
 
     const pipeline: any[] = [];
 
@@ -232,10 +232,10 @@ export async function GET(request: NextRequest) {
     const total = countResult[0]?.total || 0;
 
     // Pagination
-    pipeline.push(
-      { $skip: skip },
-      { $limit: limit }
-    );
+    // pipeline.push(
+    //   { $skip: skip },
+    //   { $limit: limit }
+    // );
 
     // Projection
     pipeline.push({
@@ -259,22 +259,22 @@ export async function GET(request: NextRequest) {
 
     const companies = await Company.aggregate(pipeline);
 
-    const totalPages = Math.ceil(total / limit);
+    // const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
       success: true,
       data: companies,
-      pagination: {
-        total,
-        count: companies.length,
-        page,
-        limit,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-        nextPage: page < totalPages ? page + 1 : null,
-        prevPage: page > 1 ? page - 1 : null
-      },
+      // pagination: {
+      //   total,
+      //   count: companies.length,
+      //   page,
+      //   limit,
+      //   totalPages,
+      //   hasNextPage: page < totalPages,
+      //   hasPrevPage: page > 1,
+      //   nextPage: page < totalPages ? page + 1 : null,
+      //   prevPage: page > 1 ? page - 1 : null
+      // },
       filters: {
         year: year || null,
         secteur: secteur || null,
