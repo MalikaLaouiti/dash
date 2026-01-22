@@ -1,11 +1,12 @@
 "use client"
 
-import * as React from "react"
 import { Table, TableBody, TableHead, TableHeader,TableRow } from "@/components/ui/table"
 import { type ParsedExcelData } from "@/lib/excel-parser"
 import { TableRows } from "@/components/table-row"
 import { DetailView } from "@/components/view-details"
 import { PaginationControls } from "@/components/pagination"
+import { useState } from "react"
+
 
 interface DataTableProps {
   data: ParsedExcelData | null
@@ -20,13 +21,13 @@ interface DataTableProps {
 }
 
 export function DataTable({ data, activeTab, selectedYear, searchQuery = "",searchFilters }: DataTableProps) {
-  const [currentPage, setCurrentPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(10)
-  const [selectedItem, setSelectedItem] = React.useState<any>(null)
-  const [isDetailOpen, setIsDetailOpen] = React.useState(false)
-  console.log("DataTable received data:", data);
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  
 
-  if (!data) {
+  if (!data ) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         <p>Aucune donnée à afficher. Importez un fichier Excel pour commencer.</p>

@@ -97,7 +97,6 @@ export function ExcelUploader({ onDataLoad, year }: ExcelUploaderProps) {
       setFileName(`Données ${year} chargées depuis la base de données`);
       setUploadStatus("success");
     } catch (error) {
-      console.error("❌ Erreur lors du chargement:", error);
       setUploadStatus("error");
       setFileName("");
     } finally {
@@ -105,9 +104,9 @@ export function ExcelUploader({ onDataLoad, year }: ExcelUploaderProps) {
     }
   }, [year, onDataLoad]);
 
-  // ✅ Recharger automatiquement quand year change
+  // Recharger automatiquement quand year change
   useEffect(() => {
-    console.log("🔄 Year a changé:", year);
+    console.log(" Year a changé:", year);
     if (year) {
       handleLoadFromDatabase();
     }

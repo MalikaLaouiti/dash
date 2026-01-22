@@ -3,11 +3,12 @@
 import { TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
+import { Eye, Loader2 } from "lucide-react"
 import { StudentDTO } from "@/dto/student.dto"
 import { CompanyDTO } from "@/dto/company.dto"
 import { SupervisorDTO } from "@/dto/supervisor.dto"
 import { on } from "events"
+import { useEffect, useState } from "react"
 
 interface TableRowsProps {
   data: any[]
@@ -31,10 +32,10 @@ export function TableRows({ data, activeTab, onViewDetails }: TableRowsProps) {
     return (
       <TableRow>
         <TableCell colSpan={8} className="text-center text-muted-foreground">
-          Aucune donnée trouvée
+          chargement des données... <Loader2 className="inline-block ml-2 h-4 w-4 animate-spin" />
         </TableCell>
       </TableRow>
-    )
+    );
   }
 
   return <>{data.map(renderRow)}</>
