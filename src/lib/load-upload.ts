@@ -81,8 +81,9 @@ export const saveToDatabase = async (parsedData: ParsedExcelData) => {
 
   
 export const getFromDatabase = async (year: String) => {
+  console.log("Récupération des données pour l'année:", year)
     try {
-      const studentsRes = await fetch("/api/student/batch?year=" + year, {
+      const studentsRes = await fetch(`/api/student/batch?year=${year}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -91,8 +92,8 @@ export const getFromDatabase = async (year: String) => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       }); 
-      
-      const companiesRes = await fetch("/api/company/batch?year=" + year, {
+
+      const companiesRes = await fetch(`/api/company/batch?year=${year}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });

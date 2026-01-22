@@ -41,8 +41,6 @@ export async function POST(request: NextRequest) {
       {} as Record<string, StudentDTO[]>,
     );
 
-    const BATCH_SIZE = 100;
-
     // Traiter chaque année
     for (const [year, students] of Object.entries(studentsByYear) as [
       string,
@@ -172,6 +170,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "100", 10);
+    const year = searchParams.get("year");
     // const filiere = searchParams.get("filiere");
     // const cin = searchParams.get("cin");
     // const search = searchParams.get("search");
@@ -180,8 +179,13 @@ export async function GET(request: NextRequest) {
     const pipeline: any[] = [];
 
     pipeline.push({ $unwind: "$students" });
-    // const matchConditions: any = {};
 
+    const matchConditions: any = {};
+
+    if (year) {
+      pipeline.push({ $match: { year } });
+    }
+    
     // if (filiere) {
     //   matchConditions["students.filiere"] = filiere;
     // }
@@ -196,9 +200,9 @@ export async function GET(request: NextRequest) {
     //   ];
     // }
 
-    // if (Object.keys(matchConditions).length > 0) {
-    //   pipeline.push({ $match: matchConditions });
-    // }
+    if (Object.keys(matchConditions).length > 0) {
+      pipeline.push({ $match: matchConditions });
+    }
 
     const countPipeline = [...pipeline, { $count: "total" }];
     const countResult = await Student.aggregate(countPipeline);
@@ -254,11 +258,11 @@ export async function GET(request: NextRequest) {
         nextPage: page < totalPages ? page + 1 : null,
         prevPage: page > 1 ? page - 1 : null,
       },
-      // filters: {
-      // year: year || null,
-      //   secteur: secteur || null,
-      //   search: search || null,
-      // },
+      filters: {
+        year: year || null,
+        // secteur: secteur || null,
+        // search: search || null,
+      },
     });
   } catch (error: any) {
     console.error("GET Error:", error);
