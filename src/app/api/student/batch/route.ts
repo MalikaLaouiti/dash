@@ -1,19 +1,18 @@
-// app/api/student/batch/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import Student from '@/models/Student';
-import mongoose from 'mongoose';
-import { StudentDTO } from '@/dto/student.dto';
+import { NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/mongodb";
+import Student from "@/models/Student";
+import mongoose from "mongoose";
+import { StudentDTO } from "@/dto/student.dto";
 
 const BATCH_SIZE = 100;
 
 export async function POST(request: NextRequest) {
   try {
-    const { students } = await request.json();
+    const { students: rawStudents } = await request.json();
 
-    if (!students || !Array.isArray(students) || students.length === 0) {
+    if (!rawStudents || !Array.isArray(rawStudents) || rawStudents.length === 0) {
       return NextResponse.json(
-        { error: 'No students provided' },
+        { error: "No students provided" },
         { status: 400 }
       );
     }
@@ -21,87 +20,138 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     let totalInserted = 0;
+    let totalUpdated = 0;
     let totalFailed = 0;
     const errors: any[] = [];
-    const insertedIds: any[] = [];
 
-    for (let i = 0; i < students.length; i += BATCH_SIZE) {
-      const batch = students.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+    // Grouper par année
+    const studentsByYear = rawStudents.reduce((acc, student) => {
+      const year = student.annee.toString();
+      if (!acc[year]) {
+        acc[year] = [];
+      }
+      acc[year].push(student);
+      return acc;
+    }, {} as Record<string, StudentDTO[]>);
 
+    const BATCH_SIZE = 100;
+
+    // Traiter chaque année
+    for (const [year, students] of Object.entries(studentsByYear) as [string, StudentDTO[]][]) {
       try {
-        const result = await Student.insertMany(batch, { 
-          ordered: false,
-        });
+        // S'assurer que le document année existe
+        await Student.findOneAndUpdate(
+          { year },
+          { $setOnInsert: { year, students: [] } },
+          { upsert: true, new: true }
+        );
+
         
-        if (Array.isArray(result)) {
-          totalInserted += result.length;
-          insertedIds.push(...result.map((doc: any) => doc._id));
+        const yearDoc = await Student.findOne({ year });
+        const existingCINs = new Set(
+          yearDoc?.students?.map((s: any) => s.cin) || []
+        );
+
+        for (let i = 0; i < students.length; i += BATCH_SIZE) {
+          const batch = students.slice(i, i + BATCH_SIZE);
+          const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+          try {
+            const studentsToInsert: any[] = [];
+            const bulkUpdateOps: any[] = [];
+
+            for (const student of batch) {
+              if (existingCINs.has(student.cin)) {
+                // Étudiant existe - préparer mise à jour
+                const { cin, ...updateFields } = student;
+                const setFields: any = { 'students.$.updatedAt': new Date() };
+
+                Object.keys(updateFields).forEach(key => {
+                  const value = (updateFields as Record<string, any>)[key];
+                  if (value !== undefined && value !== null) {
+                    setFields[`students.$.${key}`] = value;
+                  }
+                });
+
+                bulkUpdateOps.push({
+                  updateOne: {
+                    filter: { year, 'students.cin': cin },
+                    update: { $set: setFields }
+                  }
+                });
+              } else {
+                // Nouvel étudiant - préparer insertion
+                studentsToInsert.push({
+                  ...student,
+                  createdAt: new Date(),
+                  updatedAt: new Date()
+                });
+                existingCINs.add(student.cin); // Éviter doublons dans même batch
+              }
+            }
+
+            //Insérer tous les nouveaux étudiants EN UNE SEULE OPÉRATION
+            if (studentsToInsert.length > 0) {
+              await Student.findOneAndUpdate(
+                { year },
+                { $push: { students: { $each: studentsToInsert } } }
+              );
+              totalInserted += studentsToInsert.length;
+            }
+
+            //Mettre à jour tous les étudiants existants EN UNE SEULE OPÉRATION
+            if (bulkUpdateOps.length > 0) {
+              const result = await Student.bulkWrite(bulkUpdateOps, { ordered: false });
+              totalUpdated += result.modifiedCount;
+            }
+
+          } catch (error: any) {
+            totalFailed += batch.length;
+            errors.push({
+              year,
+              batch: batchNumber,
+              error: "Batch processing failed",
+              message: error.message,
+              count: batch.length
+            });
+          }
         }
 
       } catch (error: any) {
-        
-        
-        if (error.writeErrors) {
-          const inserted = batch.length - error.writeErrors.length;
-          totalInserted += inserted;
-          totalFailed += error.writeErrors.length;
-
-         
-          error.writeErrors.forEach((err: any, idx: number) => {
-            console.error(`   Write Error ${idx + 1}:`, {
-              index: err.index,
-              code: err.err.code,
-              message: err.err.errmsg,
-            });
-            errors.push({
-              batch: batchNumber,
-              index: err.index,
-              code: err.err.code,
-              message: err.err.errmsg,
-            });
-          });
-
-          // Get IDs of successfully inserted docs
-          if (error.insertedDocs && Array.isArray(error.insertedDocs)) {
-            insertedIds.push(...error.insertedDocs.map((doc: any) => doc._id));
-          }
-        } else {
-          totalFailed += batch.length;
-          errors.push({
-            batch: batchNumber,
-            error: error.message,
-            stack: error.stack,
-          });
-        }
+        totalFailed += students.length;
+        errors.push({
+          year,
+          error: "Failed to process year",
+          message: error.message,
+          count: students.length
+        });
       }
     }
-    
+
     const finalCount = await Student.countDocuments();
-    const estimatedCount = await Student.estimatedDocumentCount();
+
     return NextResponse.json({
       success: true,
       data: {
+        operation: 'upsert',
         inserted: totalInserted,
+        updated: totalUpdated,
         failed: totalFailed,
-        total: students.length,
+        total: rawStudents.length,
+        yearsProcessed: Object.keys(studentsByYear).length,
         verification: {
-          countDocuments: finalCount,
-          estimatedDocumentCount: estimatedCount,
+          countDocuments: finalCount
         },
-        insertedIds: insertedIds.slice(0, 5),
-        databaseName: mongoose.connection.name,
-        collectionName: Student.collection.name,
-        errors: errors.length > 0 ? errors : undefined,
-      },
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined
+      }
     });
 
   } catch (error: any) {
     return NextResponse.json(
-      { 
-        error: 'Failed to insert students',
-        message: error.message,
-        stack: error.stack,
+      {
+        success: false,
+        error: "Failed to process students",
+        message: error.message
       },
       { status: 500 }
     );
@@ -113,16 +163,16 @@ export async function GET(request: NextRequest) {
     await connectDB();
     const students: StudentDTO[] = await Student.find();
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      data: students,  
-      count: students.length
+      data: students,
+      count: students.length,
     });
   } catch (error: any) {
-    console.error('GET Error:', error);
+    console.error("GET Error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch students', message: error.message },
-      { status: 500 }
+      { error: "Failed to fetch students", message: error.message },
+      { status: 500 },
     );
   }
 }

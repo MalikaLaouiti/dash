@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Company from "@/models/Company";
-import mongoose from "mongoose";
 import { CompanyDTO } from "@/dto/company.dto";
 import { normalizeCompanyName } from "@/lib/excel-parser";
 
 
 export async function POST(request: NextRequest) {
-  let totalInserted = 0;
-  let totalUpdated = 0;
-  let totalFailed = 0;
-  const errors: any[] = [];
-
   try {
     const { companies: rawCompanies } = await request.json();
 
@@ -23,6 +17,11 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+    
+    let totalInserted = 0;
+    let totalUpdated = 0;
+    let totalFailed = 0;
+    const errors: any[] = [];
 
     // Grouper par année
     const companiesByYear = rawCompanies.reduce(
