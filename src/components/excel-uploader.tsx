@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ExcelParser, type ParsedExcelData } from "@/lib/excel-parser"
@@ -13,6 +13,7 @@ interface ExcelUploaderProps {
 }
 
 export function ExcelUploader({ onDataLoad, year }: ExcelUploaderProps) {
+  console.log("ExcelUploader year prop:", year);
   const [isLoading, setIsLoading] = useState(false)
   const [fileName, setFileName] = useState<string>("")
   const [isLoadingFromDB, setIsLoadingFromDB] = useState(false)
@@ -67,35 +68,50 @@ export function ExcelUploader({ onDataLoad, year }: ExcelUploaderProps) {
     }
   }
 
-  const handleLoadFromDatabase = async () => {
-    setIsLoadingFromDB(true)
-    setUploadStatus("idle")
+  const handleLoadFromDatabase = useCallback(async () => {
+    setIsLoadingFromDB(true);
+    setUploadStatus("idle");
 
     try {
-      const data = await getFromDatabase(year)
-      console.log("Données chargées depuis la base de données:", data)
-  
-      const parsedData: ParsedExcelData = {
-        students: data.students,
-        companies: data.companies,
-        supervisors: data.supervisors,
-        summary: {
-          totalStudents: data.students.length,
-          totalCompanies: data.companies.length,
-          totalSupervisors: data.supervisors.length,
-          yearsCovered: data.summary.yearsCovered,
-        },
+      console.log("Chargement des données pour l'année:", year);
+      const data = await getFromDatabase(year);
+      console.log("Données reçues:", data);
+
+      if (!data) {
+        throw new Error("Aucune donnée trouvée");
       }
 
-      onDataLoad(parsedData)
-      setFileName("Données chargées depuis la base de données")
-      setUploadStatus("success")
+      const parsedData: ParsedExcelData = {
+        students: data.students || [],
+        companies: data.companies || [],
+        supervisors: data.supervisors || [],
+        summary: {
+          totalStudents: data.students?.length || 0,
+          totalCompanies: data.companies?.length || 0,
+          totalSupervisors: data.supervisors?.length || 0,
+          yearsCovered: data.summary?.yearsCovered || [year],
+        },
+      };
+
+      onDataLoad(parsedData);
+      setFileName(`Données ${year} chargées depuis la base de données`);
+      setUploadStatus("success");
     } catch (error) {
-      setUploadStatus("error")
+      console.error("❌ Erreur lors du chargement:", error);
+      setUploadStatus("error");
+      setFileName("");
     } finally {
-      setIsLoadingFromDB(false)
+      setIsLoadingFromDB(false);
     }
-  }
+  }, [year, onDataLoad]);
+
+  // ✅ Recharger automatiquement quand year change
+  useEffect(() => {
+    console.log("🔄 Year a changé:", year);
+    if (year) {
+      handleLoadFromDatabase();
+    }
+  }, [year]);
 
   return (
     <div className="flex items-center gap-4">

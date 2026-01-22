@@ -112,7 +112,7 @@ export default function DashHome() {
     ];
     return tabs;
   }, [displayData, parsedData, selectedYear, searchQuery, searchFilters]);
-
+  console.log("year selected in dashboard:", selectedYear);
 
 
   return (
@@ -121,8 +121,10 @@ export default function DashHome() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Dashboard d&apos;Analyse Académique</h1>
         </div>
+        
         <ExcelUploader onDataLoad={handleDataLoad} year={selectedYear!} />
-      </div>
+        
+        </div>
       <div className="flex items-center gap-4 pl-9 pr-8 pb-2 border-b">
         <SearchBar
           query={searchQuery}
