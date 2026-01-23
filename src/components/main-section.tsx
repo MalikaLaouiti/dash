@@ -10,6 +10,8 @@ import { useState, useMemo, useEffect } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
 import { useData } from "@/Context/DataContext";
 import { getFromDatabase } from "@/lib/load-upload";
+import { LoaderCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface TabConfig {
     id: string;
@@ -18,7 +20,7 @@ interface TabConfig {
     content: React.ReactNode;
 }
 
-export default function Body() {
+export default function Main() {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [searchFilters, setSearchFilters] = useState({
         students: true,
@@ -39,7 +41,7 @@ export default function Body() {
 
             try {
                 const data = await getFromDatabase(selectedYear!);
-                
+
                 if (!data) {
                     setError("Aucune donnée trouvée pour l'année sélectionnée");
                     return;
@@ -67,7 +69,7 @@ export default function Body() {
         };
 
         loadData();
-    }, [selectedYear]); 
+    }, [selectedYear]);
 
     const displayData = useMemo(() => {
         return searchResults || parsedData;
@@ -147,11 +149,15 @@ export default function Body() {
 
     if (isLoading) {
         return (
-            <div className="flex-1 overflow-auto p-9 space-y-2">
-                <div className="text-center text-muted-foreground">
-                    Chargement des données...
-                </div>
-            </div>
+            <Card className="p-9 m-9 space-y-2">
+                <CardHeader >
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="aspect-video w-full" />
+                </CardContent>
+            </Card>
         );
     }
 
@@ -188,9 +194,9 @@ export default function Body() {
                             <CardTitle className="flex items-center gap-2">
                                 Résumé des données importées
                                 <Badge variant="secondary">
-                                    {parsedData.students.length + 
-                                     parsedData.companies.length + 
-                                     parsedData.supervisors.length} éléments
+                                    {parsedData.students.length +
+                                        parsedData.companies.length +
+                                        parsedData.supervisors.length} éléments
                                 </Badge>
                             </CardTitle>
                             <CardDescription>
@@ -203,9 +209,9 @@ export default function Body() {
                             <div className="mt-4">
                                 <span className="text-sm text-muted-foreground">Années couvertes: </span>
                                 {parsedData.summary.yearsCovered.map(year => (
-                                    <Badge 
-                                        key={year} 
-                                        variant={year === selectedYear ? "default" : "outline"} 
+                                    <Badge
+                                        key={year}
+                                        variant={year === selectedYear ? "default" : "outline"}
                                         className="mr-2"
                                     >
                                         {year}
