@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Student from "@/models/Student";
-import mongoose from "mongoose";
 import { StudentDTO } from "@/dto/student.dto";
 
 const BATCH_SIZE = 100;
@@ -10,11 +9,8 @@ export async function POST(request: NextRequest) {
   try {
     const { students: rawStudents } = await request.json();
 
-    if (
-      !rawStudents ||
-      !Array.isArray(rawStudents) ||
-      rawStudents.length === 0
-    ) {
+    if ( !rawStudents || !Array.isArray(rawStudents) || rawStudents.length === 0)
+    {
       return NextResponse.json(
         { error: "No students provided" },
         { status: 400 },
@@ -42,10 +38,8 @@ export async function POST(request: NextRequest) {
     );
 
     // Traiter chaque année
-    for (const [year, students] of Object.entries(studentsByYear) as [
-      string,
-      StudentDTO[],
-    ][]) {
+    for (const [year, students] of Object.entries(studentsByYear) as [string,StudentDTO[]][]) 
+    {
       try {
         // S'assurer que le document année existe
         await Student.findOneAndUpdate(
