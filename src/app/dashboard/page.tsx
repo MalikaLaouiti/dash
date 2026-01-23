@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
-import { ExcelUploader } from "@/components/excel-uploader";
 import { useData } from "@/Context/DataContext";
+import Header from "@/components/header";
 
 interface TabConfig {
   id: string;
@@ -114,14 +114,7 @@ export default function DashHome() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4 p-6 border-b border-border">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard d&apos;Analyse Académique</h1>
-        </div>
-
-        <ExcelUploader onDataLoad={handleDataLoad} year={selectedYear!} />
-
-      </div>
+      <Header/>
       <div className="flex items-center gap-4 pl-9 pr-8 pb-2 border-b">
         <SearchBar
           query={searchQuery}
@@ -184,7 +177,6 @@ export default function DashHome() {
                 </TabsTrigger>
               ))}
             </TabsList>
-
             {dynamicTabs.map((tab) => (
               <TabsContent key={tab.id} value={tab.id} className="mt-6">
                 {tab.content}
