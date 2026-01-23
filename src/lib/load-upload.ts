@@ -87,7 +87,7 @@ export const getFromDatabase = async (year: String) => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      
+
       const supervisorsRes= await fetch(`/api/supervisor/batch?year=${year}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
