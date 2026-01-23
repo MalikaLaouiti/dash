@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
       // },
       filters: {
         year: year || null,
-        // secteur: secteur || null,
+        // filiere: filiere || null,
         // search: search || null,
       },
     });
@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false,
-        error: "Failed to fetch companies", 
+        error: "Failed to fetch students", 
         message: error.message 
       },
       { status: 500 }
