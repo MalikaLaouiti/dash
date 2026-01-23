@@ -11,6 +11,7 @@ import { useState, useMemo } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
 import { useData } from "@/Context/DataContext";
 import Header from "@/components/header";
+import Body from "@/components/body";
 
 interface TabConfig {
   id: string;
@@ -138,53 +139,8 @@ export default function DashHome() {
           </span> résultat(s) trouvé(s) pour &quot;{searchQuery}&quot;
         </div>
       )}
-
-      <div className="flex-1 overflow-auto p-9 space-y-2">
-        {!parsedData && <UsageInstructions />}
-
-        {parsedData && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Résumé des données importées
-                <Badge variant="secondary">{parsedData.students.length + parsedData.companies.length + parsedData.supervisors.filter(s => s.categorie === "academique").length + parsedData.supervisors.filter(s => s.categorie === "professionnel").length} éléments</Badge>
-              </CardTitle>
-              <CardDescription>
-                {searchQuery
-                  ? `Résultats filtrés pour "${searchQuery}"`
-                  : "Données extraites du fichier Excel et organisées par catégorie"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mt-4">
-                <span className="text-sm text-muted-foreground">Années couvertes: </span>
-                {parsedData.summary.yearsCovered.map(year => (
-                  year === selectedYear ?
-                    <Badge key={year} variant="default" className="mr-2">{year}</Badge>
-                    : <Badge key={year} variant="outline" className="mr-2">{year}</Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {dynamicTabs.length > 0 && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex flex-wrap gap-4 w-full" style={{ gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)` }}>
-              {dynamicTabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex-1 min-w-[150px] max-w-[250px]">
-                  {tab.label} {tab.count > 0 && `(${tab.count})`}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {dynamicTabs.map((tab) => (
-              <TabsContent key={tab.id} value={tab.id} className="mt-6">
-                {tab.content}
-              </TabsContent>
-            ))}
-          </Tabs>
-        )}
-      </div>
+      <Body/>
+      
     </div>
   )
 };
