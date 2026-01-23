@@ -90,7 +90,7 @@ export default function Header() {
                             <HelpCircle className="h-4 w-4" />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[800px]" align="end">
+                    <PopoverContent className="w-[600px] backdrop-blur-sm" align="end">
                         <UsageInstructions />
                     </PopoverContent>
                 </Popover>
