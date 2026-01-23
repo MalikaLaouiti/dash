@@ -78,11 +78,20 @@ export const saveToDatabase = async (parsedData: ParsedExcelData) => {
       throw error;
     }
   }
-
   
 export const getFromDatabase = async (year: String) => {
-  console.log("Récupération des données pour l'année:", year)
     try {
+      const yearRes = await fetch(`/api/year`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      });
+        
+      const yearData = await yearRes.json()
+      console.log("Années disponibles:", yearData)
+      if (year=== "null" || !year) {
+        year = yearData.data[yearData.data.length -1];
+      }      
+
       const studentsRes = await fetch(`/api/student/batch?year=${year}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -97,6 +106,9 @@ export const getFromDatabase = async (year: String) => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
+      if (!yearRes.ok) {
+        throw new Error("Erreur lors de la récupération des années")
+      } 
 
       if (!studentsRes.ok || !supervisorsRes.ok || !companiesRes.ok) {
         throw new Error("Erreur lors de la récupération des données")
@@ -105,12 +117,10 @@ export const getFromDatabase = async (year: String) => {
       const studentsData = await studentsRes.json()
       const supervisorsData = await supervisorsRes.json()
       const companiesData = await companiesRes.json()
-      console.log("Données récupérées:", { studentsData, supervisorsData, companiesData })
 
-      const yearsSet = new Set<string>()
-      studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))
-      companiesData.data.forEach((c: CompanyDTO) => yearsSet.add(c.annee))
-      supervisorsData.data.forEach((s: SupervisorDTO) => yearsSet.add(s.annee))
+      // const yearsSet = new Set<string>()
+      // studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))
+
       
       return {
         students: studentsData.data as StudentDTO[],
@@ -120,7 +130,7 @@ export const getFromDatabase = async (year: String) => {
           totalStudents: studentsData.data.length,
           totalCompanies: companiesData.data.length,
           totalSupervisors: supervisorsData.data.length,
-          yearsCovered: Array.from(yearsSet).sort().reverse(),
+          yearsCovered: yearData.data.reverse()
         },
       }
     } catch (error) {
