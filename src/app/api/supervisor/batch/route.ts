@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     // const skip = (page - 1) * limit;
     const pipeline: any[] = [];
 
-    pipeline.push({ $unwind: "$Supervisors" });
+    pipeline.push({ $unwind: "$supervisors" });
 
     const matchConditions: any = {};
 
