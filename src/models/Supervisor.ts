@@ -1,13 +1,24 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 
-const SupervisorSchema = new Schema({
+const Supervisor = new Schema({
   prenom: { type: String, required: true },
   email: { type: String },
   telephone: { type: String },
   nombreEtudiants: { type: Number, default: 0 },
   annee: { type: String, required: true },
   categorie: { type: String, enum: ["professionnel", "academique"], required: true }
+});
+
+const SupervisorSchema=  new Schema({
+  year: {
+    type: String,
+    required: true
+  },
+  supervisors: {
+    type: [Supervisor],
+    default: []
+  }
 });
 
 // Index pour optimiser les requêtes
