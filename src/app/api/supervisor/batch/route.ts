@@ -155,21 +155,98 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
+    const { searchParams } = new URL(request.url);
+    // const page = parseInt(searchParams.get("page") || "1", 10);
+    // const limit = parseInt(searchParams.get("limit") || "100", 10);
+    const year = searchParams.get("year");
+    // const prenom = searchParams.get("prenom");
+ 
+    // const search = searchParams.get("search");
 
-    const supervisors: SupervisorDTO[] = await Supervisor.find();
+    // const skip = (page - 1) * limit;
+    const pipeline: any[] = [];
+
+    pipeline.push({ $unwind: "$Supervisors" });
+
+    const matchConditions: any = {};
+
+    if (year) {
+      pipeline.push({ $match: { year } });
+    }
+    
+    // if (prenom) {
+    //   matchConditions["students.prenom"] = prenom;
+    // }
+
+
+    // if (search) {
+    //   matchConditions.$or = [
+    //     { "supercisors.prenom": { $regex: search, $options: "i" } },
+    //     { "supercisors.categorie": { $regex: search, $options: "i" } },
+    //   ];
+    // }
+
+    if (Object.keys(matchConditions).length > 0) {
+      pipeline.push({ $match: matchConditions });
+    }
+
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Supervisor.aggregate(countPipeline);
+    const total = countResult[0]?.total || 0;
+
+    // pipeline.push({ $skip: skip }, { $limit: limit });
+
+    pipeline.push({
+      $project: {
+        _id: '$supervisors._id',
+        prenom: '$supervisors.prenom',
+        email: '$supervisors.email',
+        telephone: '$supervisors.telephone',
+        nombreEtudiants: '$supervisors.nombreEtudiants',
+        annee: '$supervisors.annee',
+        categorie: '$supervisors.categorie',
+        createdAt: '$supervisors.createdAt',
+        updatedAt: '$supervisors.updatedAt',
+      },
+    });
+
+    const supervisors = await Supervisor.aggregate(pipeline);
+
+    // const totalPages = Math.ceil(total / limit);
 
     return NextResponse.json({
+      success: true,
       data: supervisors,
-      count: supervisors.length,
+      // pagination: {
+      //   total,
+      //   count: students.length,
+      //   page,
+      //   limit,
+      //   totalPages,
+      //   hasNextPage: page < totalPages,
+      //   hasPrevPage: page > 1,
+      //   nextPage: page < totalPages ? page + 1 : null,
+      //   prevPage: page > 1 ? page - 1 : null,
+      // },
+      filters: {
+        year: year || null,
+        // prenom: prenom || null,
+        // search: search || null,
+      },
     });
   } catch (error: any) {
     console.error("GET Error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch supervisors", message: error.message },
-      { status: 500 },
+      { 
+        success: false,
+        error: "Failed to fetch supervisors", 
+        message: error.message 
+      },
+      { status: 500 }
     );
   }
 }
