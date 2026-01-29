@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from "@/components/Provider";
+import { DataProvider } from "@/Context/DataContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Providers } from "@/app/Provider";
 
 
 const geistSans = Geist({
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Dashboard d'Analyse Stage",
-  description: "Dashboard d'Analyse Stage de l'IsIMM",
+  description: "Dashboard d'Analyse Stage de l'ISIMM",
 };
 
 export default function RootLayout({
@@ -30,15 +31,13 @@ export default function RootLayout({
     <html lang="fr">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
-          <SidebarProvider>
-            <div className="flex h-screen w-full bg-background">
-              <AppSidebar />
-              <main className="flex-1 flex flex-col overflow-hidden">
-                <SidebarTrigger />
-                {children}
-              </main>
-            </div>
-          </SidebarProvider>
+          <div className="flex h-screen w-full bg-background">
+            <AppSidebar />
+            <main className="flex-1 flex flex-col overflow-hidden">
+              <SidebarTrigger />
+              {children}
+            </main>
+          </div>
         </Providers>
       </body>
     </html>

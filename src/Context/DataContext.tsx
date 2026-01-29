@@ -1,23 +1,40 @@
-'use client'
+// Context/DataContext.tsx
+"use client";
 
-import { createContext, useContext,useState,ReactNode } from "react"
-import { ParsedExcelData } from "@/lib/excel-parser"
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface DataContextType {
-  parsedData: ParsedExcelData | null
-  setParsedData: (data:ParsedExcelData|null) => void
-  selectedYear: string | null
-  setSelectedYear: (year:string|null) => void
+  parsedData: any;
+  setParsedData: (data: any) => void;
+  selectedYear: string;
+  setSelectedYear: (year: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
- 
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [parsedData, setParsedData] = useState<ParsedExcelData | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  console.log("🔵 DataProvider montée");
+  
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+
+  useEffect(() => {
+    console.log("📊 parsedData changé:", parsedData);
+  }, [parsedData]);
+
+  useEffect(() => {
+    console.log("📅 selectedYear changé:", selectedYear);
+  }, [selectedYear]);
 
   return (
-    <DataContext.Provider value={{ parsedData, setParsedData, selectedYear, setSelectedYear}}>
+    <DataContext.Provider
+      value={{
+        parsedData,
+        setParsedData,
+        selectedYear,
+        setSelectedYear,
+      }}
+    >
       {children}
     </DataContext.Provider>
   );
@@ -25,8 +42,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 export function useData() {
   const context = useContext(DataContext);
-  if (!context) {
-    throw new Error('useData must be used within DataProvider');
+  console.log("🟢 useData appelé, context:", context);
+  if (context === undefined) {
+    throw new Error("useData must be used within a DataProvider");
   }
   return context;
 }
