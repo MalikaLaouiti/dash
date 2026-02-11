@@ -12,13 +12,11 @@ import getYearOverYearComparison from '@/lib/analyse/yearComparison';
 
 export async function GET(request: NextRequest) {
   try {
-    // Connexion à la base de données
     await connectDB();
     
     const { searchParams } = request.nextUrl;
     const action = searchParams.get('action');
 
-    // Si pas d'action, lister les endpoints disponibles
     if (!action) {
       return NextResponse.json({
         success: true,
@@ -29,7 +27,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Router centralisé basé sur l'action
     switch (action) {
       case 'top-supervisors':
         return await handleTopSupervisors(searchParams);
@@ -68,13 +65,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ============================================
-// HANDLERS SPÉCIFIQUES
-// ============================================
-
 async function handleTopSupervisors(searchParams: URLSearchParams) {
   try {
-    // Extraction et validation des paramètres
     const year = searchParams.get('year');
     if (!year) {
       return NextResponse.json(
@@ -111,7 +103,6 @@ async function handleTopSupervisors(searchParams: URLSearchParams) {
       );
     }
 
-    // Exécuter la requête
     const results = await getTopSupervisors(year, categorie, limit);
     
     return NextResponse.json({ 
@@ -192,7 +183,6 @@ async function handleCompanyLoyalty(searchParams: URLSearchParams) {
       );
     }
 
-    // Valider le format de chaque année
     const yearRegex = /^\d{4}$/;
     const invalidYears = years.filter(y => !yearRegex.test(y));
     if (invalidYears.length > 0) {
@@ -311,9 +301,8 @@ async function handleYearComparison(searchParams: URLSearchParams) {
 
 
 function handleError(error: unknown) {
-  // Erreur de validation Zod
+
   if (error && typeof error === 'object' && 'issues' in error) {
-    
     return NextResponse.json(
       {
         success: false,
@@ -323,7 +312,6 @@ function handleError(error: unknown) {
     );
   }
   
-  // Erreur MongoDB
   if (error && typeof error === 'object' && 'name' in error) {
     const err = error as { name: string; message: string };
     if (err.name === 'MongoError' || err.name === 'MongoServerError') {
@@ -337,8 +325,7 @@ function handleError(error: unknown) {
       );
     }
   }
-  
-  // Erreur générique
+
   return NextResponse.json(
     { 
       success: false, 
