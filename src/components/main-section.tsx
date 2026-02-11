@@ -12,7 +12,7 @@ import { useData } from "@/Context/DataContext";
 import { getFromDatabase } from "@/lib/load-upload";
 import { LoaderCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton"
-import { getTopSupervisors } from "@/lib/analyse";
+// import { getTopSupervisors } from "@/lib/analyse";
 
 interface TabConfig {
     id: string;
@@ -34,8 +34,8 @@ export default function Main() {
     const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const result=  getTopSupervisors(selectedYear, 10);
-    console.log(result)
+    // const result=  getTopSupervisors(selectedYear, 10);
+    // console.log(result)
 
     useEffect(() => {
         const loadData = async () => {
