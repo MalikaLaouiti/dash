@@ -6,12 +6,13 @@ import { UsageInstructions } from "@/components/usage-instructions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
 import { useData } from "@/Context/DataContext";
 import { getFromDatabase } from "@/lib/load-upload";
 import { LoaderCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton"
+import { getTopSupervisors } from "@/lib/analyse";
 
 interface TabConfig {
     id: string;
@@ -19,6 +20,7 @@ interface TabConfig {
     count: number;
     content: React.ReactNode;
 }
+
 
 export default function Main() {
     const [searchQuery, setSearchQuery] = useState<string>("");
@@ -32,6 +34,8 @@ export default function Main() {
     const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const result=  getTopSupervisors(selectedYear, 10);
+    console.log(result)
 
     useEffect(() => {
         const loadData = async () => {
@@ -78,8 +82,8 @@ export default function Main() {
     const dynamicTabs = useMemo((): TabConfig[] => {
         if (!parsedData) return [];
 
-        const academicSupervisors = parsedData.supervisors.filter(s => s.categorie === "academique");
-        const professionalSupervisors = parsedData.supervisors.filter(s => s.categorie === "professionnel");
+        const academicSupervisors = parsedData.supervisors.filter((s: { categorie: string; }) => s.categorie === "academique");
+        const professionalSupervisors = parsedData.supervisors.filter((s: { categorie: string; }) => s.categorie === "professionnel");
 
         return [
             {
@@ -208,9 +212,9 @@ export default function Main() {
                         <CardContent>
                             <div className="mt-4">
                                 <span className="text-sm text-muted-foreground">Années couvertes: </span>
-                                {parsedData.summary.yearsCovered.map(year => (
+                                {parsedData.summary.yearsCovered.map((year: boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | Key | null | undefined) => (
                                     <Badge
-                                        key={year}
+                                        key={year?.toString() || "yyyy"}
                                         variant={year === selectedYear ? "default" : "outline"}
                                         className="mr-2"
                                     >
