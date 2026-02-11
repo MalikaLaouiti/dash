@@ -87,7 +87,6 @@ export const getFromDatabase = async (year: String) => {
       });
         
       const yearData = await yearRes.json()
-      console.log("Années disponibles:", yearData)
       if (year=== "null" || !year) {
         year = yearData.data[yearData.data.length -1];
       }      
@@ -117,9 +116,6 @@ export const getFromDatabase = async (year: String) => {
       const studentsData = await studentsRes.json()
       const supervisorsData = await supervisorsRes.json()
       const companiesData = await companiesRes.json()
-      console.log("Données récupérées de la base de données pour l'année", year, ":", supervisorsData.data)
-      // const yearsSet = new Set<string>()
-      // studentsData.data.forEach((s: StudentDTO) => yearsSet.add(s.annee))
 
       
       return {
