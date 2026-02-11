@@ -13,18 +13,8 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  console.log("🔵 DataProvider montée");
-  
   const [parsedData, setParsedData] = useState<any>(null);
   const [selectedYear, setSelectedYear] = useState<string>("");
-
-  useEffect(() => {
-    console.log("📊 parsedData changé:", parsedData);
-  }, [parsedData]);
-
-  useEffect(() => {
-    console.log("📅 selectedYear changé:", selectedYear);
-  }, [selectedYear]);
 
   return (
     <DataContext.Provider
