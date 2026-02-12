@@ -3,17 +3,14 @@ import {CompanyFiliereResult} from './types';
 
 export default async function getCompanyFiliereAnalysis(
   year: string,
-  minStudents: number = 1
 ): Promise<CompanyFiliereResult[]> {
-  // Validation
-  const validatedParams = { year, minStudents };
 
-  
+
   const results = await Student.aggregate([
   {
     $match:
       {
-        year: validatedParams.year
+        year: year
       }
   },
   {

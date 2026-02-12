@@ -144,15 +144,14 @@ async function handleCompanyFiliere(searchParams: URLSearchParams) {
       );
     }
 
-    const results = await getCompanyFiliereAnalysis(year, minStudents);
+    const results = await getCompanyFiliereAnalysis(year);
     
     return NextResponse.json({ 
       success: true, 
       data: results,
       count: results.length,
       metadata: {
-        year,
-        minStudents
+        year
       }
     });
   } catch (error) {
