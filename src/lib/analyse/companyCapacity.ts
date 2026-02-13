@@ -17,30 +17,9 @@ export default async function getCompanyCapacityAnalysis(
     capaciteTotalePetites: number;
   };
 }> {
-  // Validation
+
   const validatedParams = { year };
 
-  // Compter les étudiants par entreprise
-  const studentCounts = await Student.aggregate([
-    { $match: { year: validatedParams.year } },
-    { $unwind: '$students' },
-    {
-      $match: {
-        'students.companyId': { $exists: true, $ne: null }
-      }
-    },
-    {
-      $group: {
-        _id: '$students.companyId',
-        nombreEtudiantsReel: { $sum: 1 }
-      }
-    }
-  ]);
-
-  // Créer un map pour accès rapide
-  const studentCountMap = new Map(
-    studentCounts.map((s: any) => [s._id.toString(), s.nombreEtudiantsReel])
-  );
 
   // Obtenir toutes les entreprises avec leurs infos
   const companies = await Company.aggregate([
@@ -48,8 +27,7 @@ export default async function getCompanyCapacityAnalysis(
     { $unwind: '$companies' },
     {
       $project: {
-        _id: '$companies._id',
-        nom: '$companies.nom',
+        nom: '$companies.nomNormalise',
         secteur: '$companies.secteur',
         nombreStagiaires: { $ifNull: ['$companies.nombreStagiaires', 1] }
       }
@@ -58,24 +36,17 @@ export default async function getCompanyCapacityAnalysis(
 
   // Calculer les résultats pour chaque entreprise
   const allResults: CompanyCapacityResult[] = companies.map((company: any) => {
-    const companyId = company._id.toString();
-    const nombreEtudiantsReel = studentCountMap.get(companyId) || 0;
     const capaciteDeclaree = company.nombreStagiaires;
-    const tauxOccupation = capaciteDeclaree > 0 
-      ? (nombreEtudiantsReel / capaciteDeclaree) * 100 
-      : 0;
+
 
     let categorie: 'grande' | 'moyenne' | 'petite' = 'petite';
     if (capaciteDeclaree >= 5) categorie = 'grande';
     else if (capaciteDeclaree >= 3) categorie = 'moyenne';
 
     return {
-      companyId,
       companyName: company.nom,
       secteur: company.secteur,
       capaciteDeclaree,
-      nombreEtudiantsReel,
-      tauxOccupation: Math.round(tauxOccupation * 100) / 100,
       categorie,
       annee: validatedParams.year
     };
@@ -84,24 +55,24 @@ export default async function getCompanyCapacityAnalysis(
   // Séparer par catégorie et trier
   const grandesEntreprises = allResults
     .filter(c => c.categorie === 'grande')
-    .sort((a, b) => b.nombreEtudiantsReel - a.nombreEtudiantsReel);
+    .sort((a, b) => b.capaciteDeclaree - a.capaciteDeclaree);
 
   const moyennesEntreprises = allResults
     .filter(c => c.categorie === 'moyenne')
-    .sort((a, b) => b.tauxOccupation - a.tauxOccupation);
+    .sort((a, b) => b.capaciteDeclaree - a.capaciteDeclaree);
 
   const petitesEntreprises = allResults
     .filter(c => c.categorie === 'petite')
-    .sort((a, b) => b.tauxOccupation - a.tauxOccupation);
+    .sort((a, b) => b.capaciteDeclaree - a.capaciteDeclaree);
 
   // Calculer les statistiques
   const stats = {
     totalGrandes: grandesEntreprises.length,
     totalMoyennes: moyennesEntreprises.length,
     totalPetites: petitesEntreprises.length,
-    capaciteTotaleGrandes: grandesEntreprises.reduce((sum, c) => sum + c.nombreEtudiantsReel, 0),
-    capaciteTotaleMoyennes: moyennesEntreprises.reduce((sum, c) => sum + c.nombreEtudiantsReel, 0),
-    capaciteTotalePetites: petitesEntreprises.reduce((sum, c) => sum + c.nombreEtudiantsReel, 0)
+    capaciteTotaleGrandes: grandesEntreprises.reduce((sum, c) => sum + c.capaciteDeclaree, 0),
+    capaciteTotaleMoyennes: moyennesEntreprises.reduce((sum, c) => sum + c.capaciteDeclaree, 0),
+    capaciteTotalePetites: petitesEntreprises.reduce((sum, c) => sum + c.capaciteDeclaree, 0)
   };
 
   return {

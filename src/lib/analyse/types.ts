@@ -36,12 +36,9 @@ export interface CompanyLoyaltyResult {
 }
 
 export interface CompanyCapacityResult {
-  companyId: string;
   companyName: string;
   secteur: string;
   capaciteDeclaree: number;
-  nombreEtudiantsReel: number;
-  tauxOccupation: number;
   categorie: 'grande' | 'moyenne' | 'petite';
   annee: string;
 }
