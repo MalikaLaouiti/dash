@@ -2,12 +2,10 @@ import Company from "@/models/Company";
 import { CompanyLoyaltyResult } from "./types";
 
 export default async function getCompanyLoyaltyAnalysis(
-  years: string[],
-  minYearsActive: number = 2,
-  loyaltyThreshold: number = 2,
+  years: string[]
 ): Promise<CompanyLoyaltyResult[]> {
   const sortedYears = [...years].sort();
-
+  const minYearsActive = 2;
   const pipeline: any[] = [
     {
       $match: {

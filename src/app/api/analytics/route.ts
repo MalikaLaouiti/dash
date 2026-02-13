@@ -200,7 +200,7 @@ async function handleCompanyLoyalty(searchParams: URLSearchParams) {
     const loyaltyThresholdParam = searchParams.get('loyaltyThreshold');
     const loyaltyThreshold = loyaltyThresholdParam ? parseInt(loyaltyThresholdParam) : 2;
 
-    const results = await getCompanyLoyaltyAnalysis(years, minYearsActive, loyaltyThreshold);
+    const results = await getCompanyLoyaltyAnalysis(years);
     
     return NextResponse.json({ 
       success: true, 
