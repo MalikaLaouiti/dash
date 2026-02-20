@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { UsageInstructions } from "./usage-instructions";
 
 
-export default function Hero_section() {
+export default function HeaderSection() {
     const [isLoading, setIsLoading] = useState(false)
     const { setParsedData } = useData();
     const [fileName, setFileName] = useState<string>("")

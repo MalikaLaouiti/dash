@@ -12,6 +12,7 @@ import { useData } from "@/Context/DataContext";
 import { getFromDatabase } from "@/lib/load-upload";
 import { LoaderCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton"
+import DataResume from "./data-resume";
 // import { getTopSupervisors } from "@/lib/analyse";
 
 interface TabConfig {
@@ -34,8 +35,7 @@ export default function Main() {
     const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // const result=  getTopSupervisors(selectedYear, 10);
-    // console.log(result)
+  
 
     useEffect(() => {
         const loadData = async () => {
@@ -62,7 +62,7 @@ export default function Main() {
                         yearsCovered: data.summary?.yearsCovered || [selectedYear],
                     },
                 };
-                console.log("Données chargées depuis la base de données:", parsingData.supervisors);
+                // console.log("Données chargées depuis la base de données:", parsingData.supervisors);
                 setParsedData(parsingData);
             } catch (err) {
                 console.error("Erreur lors du chargement des données:", err);
@@ -193,38 +193,7 @@ export default function Main() {
 
             {parsedData && (
                 <>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                Résumé des données importées
-                                <Badge variant="secondary">
-                                    {parsedData.students.length +
-                                        parsedData.companies.length +
-                                        parsedData.supervisors.length} éléments
-                                </Badge>
-                            </CardTitle>
-                            <CardDescription>
-                                {searchQuery
-                                    ? `Résultats filtrés pour "${searchQuery}"`
-                                    : "Données extraites du fichier Excel et organisées par catégorie"}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mt-4">
-                                <span className="text-sm text-muted-foreground">Années couvertes: </span>
-                                {parsedData.summary.yearsCovered.map((year: boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | Key | null | undefined) => (
-                                    <Badge
-                                        key={year?.toString() || "yyyy"}
-                                        variant={year === selectedYear ? "default" : "outline"}
-                                        className="mr-2"
-                                    >
-                                        {year}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                    <DataResume parsedData={parsedData} searchQuery={searchQuery} selectedYear={selectedYear} />
                     {dynamicTabs.length > 0 && (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)` }}>

@@ -3,8 +3,8 @@
 import { SearchBar } from "@/components/search-bar";
 import { useState } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
-import Hero_section from "@/components/hero-section";
 import Main from "@/components/main-section";
+import HeaderSection from "@/components/header-section";
 
 export default function DashHome() {
   const [searchQuery, setSearchQuery] = useState<string>("")
@@ -21,7 +21,7 @@ export default function DashHome() {
 
   return (
     <div className="flex flex-col h-full">
-      <Hero_section/>
+      <HeaderSection/>
       <div className="flex items-center gap-4 pl-9 pr-8 pb-2 border-b">
         <SearchBar
           query={searchQuery}
