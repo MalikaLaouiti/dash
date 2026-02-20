@@ -10,7 +10,7 @@ import {
   Users,
   UserCheck,
 } from "lucide-react"
-import { DetailField } from "./detail-field"
+import { DetailField } from "../detail-field"
 
 export function SupervisorDetail({ supervisor }: { supervisor: any }) {
   return (

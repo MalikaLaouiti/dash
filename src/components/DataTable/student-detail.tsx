@@ -18,7 +18,7 @@ import {
   FileText,
   UserCheck,
 } from "lucide-react"
-import { DetailField } from "./detail-field"
+import { DetailField } from "../detail-field"
 
 export function StudentDetail({ student }: { student: any }) {
   return (

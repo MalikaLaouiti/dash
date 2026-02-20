@@ -3,9 +3,9 @@
 import type React from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 
-import { StudentDetail } from "./student-detail"
-import { SupervisorDetail } from "./supervisor-detail"
-import { CompanyDetail } from "./company-detail" 
+import { StudentDetail } from "./DataTable/student-detail"
+import { SupervisorDetail } from "./DataTable/supervisor-detail"
+import { CompanyDetail } from "./DataTable/company-detail" 
 interface DetailViewProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void

@@ -13,7 +13,7 @@ import {
   Calendar,
   UserCheck,
 } from "lucide-react"
-import { DetailField } from "./detail-field"
+import { DetailField } from "../detail-field"
 
 export function CompanyDetail({ company }: { company: any }) {
   return (

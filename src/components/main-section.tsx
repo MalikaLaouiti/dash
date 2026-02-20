@@ -1,7 +1,7 @@
 "use client";
 
-import { DataTable } from "@/components/data-table";
-import { JsonPreview } from "@/components/json-preview";
+import { DataTable } from "@/components/DataTable/data-table";
+import { JsonPreview } from "@/components/DataTable/json-preview";
 import { UsageInstructions } from "@/components/usage-instructions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

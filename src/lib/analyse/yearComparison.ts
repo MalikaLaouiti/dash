@@ -134,7 +134,7 @@ export default async function getYearOverYearComparison(
       moyenneNotesGlobale: studentData?.moyenneNotesGlobale || 0
     };
   });
-
+ 
   // Calculer les tendances
   const tendances = {
     croissanceEtudiants: 0,
