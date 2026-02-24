@@ -1,4 +1,3 @@
-// Context/DataContext.tsx
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
@@ -8,6 +7,8 @@ interface DataContextType {
   setParsedData: (data: any) => void;
   selectedYear: string;
   setSelectedYear: (year: string) => void;
+  selectedYears: string[];
+  toggleAnalyticsYear: (year: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -15,6 +16,15 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({ children }: { children: ReactNode }) {
   const [parsedData, setParsedData] = useState<any>(null);
   const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+
+  const toggleAnalyticsYear = (year: string) => {
+    setSelectedYears(prev => {
+      if (prev.includes(year)) return prev.filter(y => y !== year);
+      if (prev.length < 3) return [...prev, year].sort();
+      return prev;
+    });
+  };
 
   return (
     <DataContext.Provider
@@ -23,6 +33,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setParsedData,
         selectedYear,
         setSelectedYear,
+        selectedYears,
+        toggleAnalyticsYear,
       }}
     >
       {children}
