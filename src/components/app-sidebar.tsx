@@ -59,18 +59,8 @@ export function AppSidebar() {
           ],
     },
     {
-      title: "Encadrant",
-      url: "/dashboard/encadrant",
-      icon: UserStar,
-    },
-    {
-      title: "Société",
-      url: "/societes",
-      icon: Building2,
-    },
-    {
       title: "Analyse",
-      url: "/analyse",
+      url: "/dashboard/encadrant",
       icon: ChartNoAxesCombined,
     },
   ]
