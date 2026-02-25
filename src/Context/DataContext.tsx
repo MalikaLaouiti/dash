@@ -9,6 +9,7 @@ interface DataContextType {
   setSelectedYear: (year: string) => void;
   selectedYears: string[];
   toggleAnalyticsYear: (year: string) => void;
+  clearAnalyticsYears: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -26,6 +27,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const clearAnalyticsYears = () => setSelectedYears([]);
+
   return (
     <DataContext.Provider
       value={{
@@ -35,6 +38,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setSelectedYear,
         selectedYears,
         toggleAnalyticsYear,
+        clearAnalyticsYears,
       }}
     >
       {children}

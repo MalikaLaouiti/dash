@@ -1,5 +1,7 @@
 "use client"
 
+import { AnalyticsTabs } from "@/components/AnalyticComponent/analytic-tabs";
+import { AnalyticsPage } from "@/components/AnalyticComponent/AnalyticPage";
 import { Card, CardDescription, CardContent } from "@/components/ui/card";
 import { useData } from "@/Context/DataContext";
 
@@ -18,6 +20,7 @@ export default function DashboardEncadrants() {
           </CardContent>
         </Card> : <div>Aucune donnée chargée</div>
       }
+      <AnalyticsTabs/>
     </div>
   )
 }

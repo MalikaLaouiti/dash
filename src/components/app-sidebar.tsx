@@ -1,14 +1,9 @@
-"use client"
-import { 
-  CalendarSearch, 
-  Home, 
-  ChartNoAxesCombined, 
-  UserStar, 
-  Building2, 
-  Database 
-} from "lucide-react"
+'use client';
 
-import Link from "next/link"
+import { CalendarSearch, Home, ChartNoAxesCombined, Database } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 import {
   Sidebar,
@@ -20,116 +15,160 @@ import {
   SidebarMenuItem,
   SidebarMenuSubItem,
   SidebarMenuSub,
-  SidebarMenuSubButton
-} from "@/components/ui/sidebar"
+  SidebarMenuSubButton,
+} from '@/components/ui/sidebar';
 
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
-} from "@/components/ui/collapsible"
-import { useData } from "@/Context/DataContext"
+} from '@/components/ui/collapsible';
+
+import { useData } from '@/Context/DataContext';
 
 export function AppSidebar() {
-  const { parsedData, selectedYear, setSelectedYear } = useData();
-  const availableYears = parsedData?.summary.yearsCovered || [];
-  
-  const onYearSelect = (year: string) => {
-    setSelectedYear(year);
+  const {
+    parsedData,
+    selectedYear,
+    setSelectedYear,
+    selectedYears,
+    toggleAnalyticsYear,
+  } = useData();
+
+  const pathname = usePathname();
+  const isAnalyticsPage = pathname === '/dashboard/analyse';
+
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchYears = async () => {
+      try {
+        const response = await fetch('/api/year', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const result = await response.json(); 
+
+        if (result.success && result.data.length > 0) {
+          setAvailableYears(result.data.reverse());
+        }
+      } catch (error) {
+        console.error('Failed to fetch years:', error);
+        setAvailableYears(['2025', '2024', '2023']);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchYears();
+  }, []);
+
+  console.log('Available years in sidebar:', availableYears);
+
+  const handleYearClick = (year: string) => {
+    if (isAnalyticsPage) {
+      toggleAnalyticsYear(year);
+    } else {
+      setSelectedYear(year);
+    }
   };
 
-  const items = [
-    {
-      title: "Accueil",
-      url: "/",
-      icon: Home,
-    },
-    {
-      title: "Année Universitaire",
-      icon: CalendarSearch,
-      children: availableYears.length > 0 
-        ? availableYears.map((year: string) => ({
-            title: year,
-            year: year
-          })) 
-        : [
-            { title: "2024", year: "2024" },
-            { title: "2023", year: "2023" },
-            { title: "2022", year: "2022" },
-          ],
-    },
-    {
-      title: "Analyse",
-      url: "/dashboard/encadrant",
-      icon: ChartNoAxesCombined,
-    },
-  ]
-  
+  const isYearActive = (year: string) => {
+    if (isAnalyticsPage) return selectedYears.includes(year);
+    return selectedYear === year;
+  };
+
+  const isYearDisabled = (year: string) => {
+    if (!isAnalyticsPage) return false;
+    return selectedYears.length >= 3 && !selectedYears.includes(year);
+  };
+
   return (
     <Sidebar>
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2">
           <Database className="h-5 w-5 text-sidebar-primary" />
-          <h2 className="font-semibold text-sidebar-foreground">Données Académiques</h2>
+          <h2 className="font-semibold text-sidebar-foreground">
+            Données Académiques
+          </h2>
         </div>
       </div>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                item.title === "Année Universitaire" ? (
-                  <Collapsible 
-                    key={item.title} 
-                    defaultOpen 
-                    className="group/collapsible"
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.children?.map((child: any) => (
-                            <SidebarMenuSubItem key={child.title}>
-                              <SidebarMenuSubButton 
-                                asChild
-                                className={selectedYear === child.year ? "bg-accent text-accent-foreground" : ""}
-                              >
-                                <button 
-                                  onClick={() => onYearSelect(child.year || child.title)}
-                                  className="w-full text-left"
-                                >
-                                  {child.title}
-                                  {selectedYear === child.year && (
-                                    <span className="ml-auto text-xs">✓</span>
-                                  )}
-                                </button>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url || "#"}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
+              {/* Accueil - Toujours en premier */}
+              <SidebarMenuItem key="accueil">
+                <SidebarMenuButton asChild>
+                  <Link href="/">
+                    <Home className="w-4 h-4" />
+                    <span>Accueil</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+
+              <Collapsible defaultOpen className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      <CalendarSearch />
+                      <span>Année Universitaire</span>
+                      {isAnalyticsPage && selectedYears.length > 0 && (
+                        <span className="ml-auto text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">
+                          {selectedYears.length}/3
+                        </span>
+                      )}
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              ))}
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {availableYears.map((year: string) => (
+                        <SidebarMenuSubItem key={year}>
+                          <SidebarMenuSubButton
+                            asChild
+                            className={
+                              isYearActive(year)
+                                ? 'bg-accent text-accent-foreground'
+                                : isYearDisabled(year)
+                                  ? 'opacity-40 cursor-not-allowed'
+                                  : ''
+                            }
+                          >
+                            <button
+                              onClick={() => !isYearDisabled(year) && handleYearClick(year)}
+                              className="w-full text-left flex items-center"
+                              disabled={isYearDisabled(year)}
+                            >
+                              {year}
+                              {isYearActive(year) && (
+                                <span className="ml-auto text-xs">✓</span>
+                              )}
+                            </button>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Analyse - Toujours en dernier */}
+              <SidebarMenuItem key="analyse">
+                <SidebarMenuButton asChild>
+                  <Link href="/dashboard/analyse">
+                    <ChartNoAxesCombined className="w-4 h-4" />
+                    <span>Analyse</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
