@@ -1,13 +1,40 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { AnalyticsPage } from '@/components/AnalyticComponent/AnalyticPage';
+import { VueGlobale } from './vue-global';
+import { useData } from '@/Context/DataContext';
+import { getYearComparison } from '@/lib/analyse/analytic';
+import { YearComparisonResult } from '@/lib/analyse/types';
 
 export function AnalyticsTabs() {
   const [activeTab, setActiveTab] = useState('vue-globale');
+  const {selectedYears}=useData();
+  const [data, setData] = useState<YearComparisonResult>();
+  const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!selectedYears || selectedYears.length < 2) {
+      setData(undefined); // Reset les données si pas assez d'années
+      return;
+    }
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const result = await getYearComparison(selectedYears);
+        setData(result);
+        console.log("Données récupérées:", result);
+      } catch (error) {
+        console.error("Erreur lors de la récupération des données:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (selectedYears?.length > 0) fetchData();
+  }, [selectedYears]);
+  
   const tabs = [
     {
       id: 'vue-globale',
@@ -36,7 +63,26 @@ export function AnalyticsTabs() {
     },
     
   ];
+  if (!selectedYears || selectedYears.length < 2) {
+    return (
+      <div className="p-6 md:p-8">
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Sélectionnez au moins 2 années pour la comparaison
+        </h3>
+        <p className="text-muted-foreground">
+          Veuillez sélectionner au moins deux années dans le sélecteur pour afficher les données comparatives.
+        </p>
+      </div>
+    );
+  }
 
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
+
+  if (!data) {
+    return <div>Aucune donnée disponible</div>;
+  }
   const renderTabContent = (tabId: string) => {
     switch (tabId) {
       case 'capacites-entreprises':
@@ -173,7 +219,7 @@ export function AnalyticsTabs() {
 
       case 'vue-globale':
       default:
-        return <AnalyticsPage />;
+        return <VueGlobale data={data} />;
     }
   };
 
@@ -187,7 +233,7 @@ export function AnalyticsTabs() {
               Tableau de Bord Analytique
             </h1>
             <p className="text-base text-muted-foreground">
-              Suivez et analysez les données de votre programme de stages
+              Suivez et analysez les données pour prendre des décisions
             </p>
           </div>
 
