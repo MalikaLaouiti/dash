@@ -3,10 +3,11 @@
 import { useState,useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import { VueGlobale } from './vue-global';
+import { VueGlobale } from './vue-global-tab/vue-global';
 import { useData } from '@/Context/DataContext';
-import { getYearComparison } from '@/lib/analyse/analytic';
+import { getCompanyCapacity, getYearComparison } from '@/lib/analyse/analytic';
 import { YearComparisonResult } from '@/lib/analyse/types';
+import { CapacitesEntreprises } from './capacite-entreprise-tab/capacite-entreprises';
 
 export function AnalyticsTabs() {
   const [activeTab, setActiveTab] = useState('vue-globale');
@@ -22,9 +23,10 @@ export function AnalyticsTabs() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const result = await getYearComparison(selectedYears);
-        setData(result);
-        console.log("Données récupérées:", result);
+        const yearComparison = await getYearComparison(selectedYears);
+        const companyCapacity =await getCompanyCapacity ([selectedYears[0]]);
+        setData(yearComparison);
+        console.log("Données récupérées:", yearComparison);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
       } finally {
@@ -87,35 +89,7 @@ export function AnalyticsTabs() {
     switch (tabId) {
       case 'capacites-entreprises':
         return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Capacités Entreprises
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Analyse des capacités d'accueil et des ressources disponibles dans les entreprises partenaires.
-              </p>
-            </div>
-            <Card className="p-8 border border-border bg-card">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Entreprises Actives</p>
-                  <p className="text-3xl font-bold text-foreground">156</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+12% vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Capacité Totale</p>
-                  <p className="text-3xl font-bold text-foreground">524</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+8% vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Taux d'Utilisation</p>
-                  <p className="text-3xl font-bold text-foreground">87.5%</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+2.3% vs année précédente</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <CapacitesEntreprises />
         );
 
       case 'fidelite-entreprises':
