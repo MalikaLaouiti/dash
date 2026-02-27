@@ -35,6 +35,19 @@ export interface CompanyLoyaltyResult {
   tauxRetention: number;
 }
 
+export interface CapacityAPIResult {
+  grandesEntreprises: CompanyCapacityResult[];
+  moyennesEntreprises: CompanyCapacityResult[];
+  petitesEntreprises: CompanyCapacityResult[];
+  stats: {
+    totalGrandes: number;
+    totalMoyennes: number;
+    totalPetites: number;
+    capaciteTotaleGrandes: number;
+    capaciteTotaleMoyennes: number;
+    capaciteTotalePetites: number;
+  }
+}
 export interface CompanyCapacityResult {
   companyName: string;
   secteur: string;

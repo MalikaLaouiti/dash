@@ -1,22 +1,10 @@
 import Student from '@/models/Student';
 import Company from '@/models/Company';
-import {CompanyCapacityResult} from './types';
+import {CompanyCapacityResult,CapacityAPIResult} from './types';
 
 export default async function getCompanyCapacityAnalysis(
   year: string
-): Promise<{
-  grandesEntreprises: CompanyCapacityResult[];
-  moyennesEntreprises: CompanyCapacityResult[];
-  petitesEntreprises: CompanyCapacityResult[];
-  stats: {
-    totalGrandes: number;
-    totalMoyennes: number;
-    totalPetites: number;
-    capaciteTotaleGrandes: number;
-    capaciteTotaleMoyennes: number;
-    capaciteTotalePetites: number;
-  };
-}> {
+): Promise<CapacityAPIResult> {
 
   const validatedParams = { year };
 

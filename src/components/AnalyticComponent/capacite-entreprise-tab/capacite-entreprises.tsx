@@ -8,15 +8,18 @@ import { TopCompaniesChart } from './top-companies-chart';
 import { SearchBar } from './search-bar';
 import { CategorySection } from './category-section';
 import { CATEGORY_CONFIG } from './category-conf';
-import { CompanyCapacityResult } from '@/lib/analyse/types';
+import { CapacityAPIResult } from '@/lib/analyse/types';
 
-interface CapacitesData {
-  grandesEntreprises: CompanyCapacityResult[];
-  moyennesEntreprises: CompanyCapacityResult[];
-  petitesEntreprises: CompanyCapacityResult[];
-}
 // Mock data (à déplacer dans un fichier séparé plus tard)
-const mockData: CapacitesData = {
+const mockData: CapacityAPIResult = {
+  stats: {
+    totalGrandes: 9,
+    totalMoyennes: 5,
+    totalPetites: 5,
+    capaciteTotaleGrandes: 85,
+    capaciteTotaleMoyennes: 20,
+    capaciteTotalePetites: 10,
+  },
   grandesEntreprises: [
     {
       companyName: 'isimm',
@@ -25,27 +28,55 @@ const mockData: CapacitesData = {
       categorie: 'grande',
       annee: '2024',
     },
+    {
+      companyName: 'leoni',
+      secteur: 'informatique',
+      capaciteDeclaree: 9,
+      categorie: 'grande',
+      annee: '2024',
+    },
     // ... autres données
   ],
   moyennesEntreprises: [
+    {
+      companyName: 'enovarobotics',
+      secteur: 'Robotique électronique',
+      capaciteDeclaree: 4,
+      categorie: 'moyenne',
+      annee: '2024',
+    },
     // ... données
   ],
   petitesEntreprises: [
+    {
+      companyName: 'enim',
+      secteur: 'Électronique embarquée',
+      capaciteDeclaree: 2,
+      categorie: 'petite',
+      annee: '2024',
+    },
     // ... données
   ],
 };
+
 interface CompanyCapaciteProps {
-  data?: CompanyCapacityResult;
+  data?: CapacityAPIResult; // Le composant attend 'data' comme prop
 }
 
-export function CapacitesEntreprises({data}:CompanyCapaciteProps) {
+export function CapacitesEntreprises({ data }: CompanyCapaciteProps) {
   const [searchQuery, setSearchQuery] = useState('');
-//   const [data] = useState<CapacitesData>(mockData);
+  
+  // Utiliser les données fournies ou les données mock
+  const displayData = data || mockData;
 
-  // Computed values
+  // Computed values avec useMemo pour optimiser
   const allCompanies = useMemo(
-    () => [...data.grandesEntreprises, ...data.moyennesEntreprises, ...data.petitesEntreprises],
-    [data]
+    () => [
+      ...displayData.grandesEntreprises,
+      ...displayData.moyennesEntreprises,
+      ...displayData.petitesEntreprises
+    ],
+    [displayData]
   );
 
   const totalCapacity = useMemo(
@@ -54,53 +85,68 @@ export function CapacitesEntreprises({data}:CompanyCapaciteProps) {
   );
 
   const grandesCapacity = useMemo(
-    () => data.grandesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
-    [data.grandesEntreprises]
+    () => displayData.grandesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
+    [displayData.grandesEntreprises]
   );
 
   const moyennesCapacity = useMemo(
-    () => data.moyennesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
-    [data.moyennesEntreprises]
+    () => displayData.moyennesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
+    [displayData.moyennesEntreprises]
   );
 
   const petitesCapacity = useMemo(
-    () => data.petitesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
-    [data.petitesEntreprises]
+    () => displayData.petitesEntreprises.reduce((sum, company) => sum + company.capaciteDeclaree, 0),
+    [displayData.petitesEntreprises]
   );
 
   const topCompanies = useMemo(
-    () => [...allCompanies].sort((a, b) => b.capaciteDeclaree - a.capaciteDeclaree).slice(0, 10),
+    () => [...allCompanies]
+      .sort((a, b) => b.capaciteDeclaree - a.capaciteDeclaree)
+      .slice(0, 10),
     [allCompanies]
   );
 
-  const capacityByCategory = [
-    { 
-      name: 'Grandes', 
-      value: grandesCapacity, 
-      count: data.grandesEntreprises.length, 
-      color: CATEGORY_CONFIG.grande.color 
-    },
-    { 
-      name: 'Moyennes', 
-      value: moyennesCapacity, 
-      count: data.moyennesEntreprises.length, 
-      color: CATEGORY_CONFIG.moyenne.color 
-    },
-    { 
-      name: 'Petites', 
-      value: petitesCapacity, 
-      count: data.petitesEntreprises.length, 
-      color: CATEGORY_CONFIG.petite.color 
-    },
-  ];
+  const capacityByCategory = useMemo(
+    () => [
+      { 
+        name: 'Grandes', 
+        value: grandesCapacity, 
+        count: displayData.grandesEntreprises.length, 
+        color: CATEGORY_CONFIG.grande.color 
+      },
+      { 
+        name: 'Moyennes', 
+        value: moyennesCapacity, 
+        count: displayData.moyennesEntreprises.length, 
+        color: CATEGORY_CONFIG.moyenne.color 
+      },
+      { 
+        name: 'Petites', 
+        value: petitesCapacity, 
+        count: displayData.petitesEntreprises.length, 
+        color: CATEGORY_CONFIG.petite.color 
+      },
+    ],
+    [grandesCapacity, moyennesCapacity, petitesCapacity, displayData]
+  );
+
+  // Vérifier si des données existent
+  if (!displayData || !displayData.stats) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">Aucune donnée disponible</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <KpiCards
         totalCompanies={allCompanies.length}
-        grandesCount={data.grandesEntreprises.length}
-        moyennesCount={data.moyennesEntreprises.length}
+        grandesCount={displayData.stats.totalGrandes}
+        moyennesCount={displayData.stats.totalMoyennes}
+        petitesCount={displayData.stats.totalPetites}
         totalCapacity={totalCapacity}
         averageCapacity={totalCapacity / allCompanies.length}
         utilizationRate={82.5}
@@ -126,21 +172,21 @@ export function CapacitesEntreprises({data}:CompanyCapaciteProps) {
         <div className="space-y-8">
           <CategorySection
             category="grande"
-            companies={data.grandesEntreprises}
+            companies={displayData.grandesEntreprises}
             totalCapacity={grandesCapacity}
             searchQuery={searchQuery}
           />
 
           <CategorySection
             category="moyenne"
-            companies={data.moyennesEntreprises}
+            companies={displayData.moyennesEntreprises}
             totalCapacity={moyennesCapacity}
             searchQuery={searchQuery}
           />
 
           <CategorySection
             category="petite"
-            companies={data.petitesEntreprises}
+            companies={displayData.petitesEntreprises}
             totalCapacity={petitesCapacity}
             searchQuery={searchQuery}
           />

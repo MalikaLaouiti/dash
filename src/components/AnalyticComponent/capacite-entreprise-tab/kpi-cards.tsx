@@ -6,6 +6,7 @@ interface KpiCardsProps {
   totalCompanies: number;
   grandesCount: number;
   moyennesCount: number;
+  petitesCount: number;
   totalCapacity: number;
   averageCapacity: number;
   utilizationRate: number;
@@ -14,7 +15,8 @@ interface KpiCardsProps {
 export function KpiCards({ 
   totalCompanies, 
   grandesCount, 
-  moyennesCount, 
+  moyennesCount,
+  petitesCount, 
   totalCapacity, 
   averageCapacity,
   utilizationRate 

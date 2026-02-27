@@ -1,4 +1,4 @@
-import { CompanyFiliereResult,CompanyLoyaltyResult, CompanyCapacityResult,TopSupervisorResult, YearComparisonResult } from "./types";
+import { CompanyFiliereResult,CompanyLoyaltyResult, CapacityAPIResult,TopSupervisorResult, YearComparisonResult } from "./types";
 
 export const getTopSupervisors = async (
   years: string[],
@@ -81,7 +81,7 @@ export const getCompanyLoyalty = async (
 
 export const getCompanyCapacity = async (years: string[]) => {
   try {
-    const params = new URLSearchParams({ action: "company-capacity", years: years.join(",") });
+    const params = new URLSearchParams({ action: "company-capacity", year: years.join(",") });
 
     const res = await fetch(`/api/analytics?${params}`, {
       method: "GET",
@@ -94,7 +94,7 @@ export const getCompanyCapacity = async (years: string[]) => {
     }
 
     const result = await res.json();
-    return result.data as CompanyCapacityResult;
+    return result.data as CapacityAPIResult;
   } catch (error) {
     console.error("Erreur company-capacity:", error);
     throw error;

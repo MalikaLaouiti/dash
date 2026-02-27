@@ -6,18 +6,19 @@ import { Card } from '@/components/ui/card';
 import { VueGlobale } from './vue-global-tab/vue-global';
 import { useData } from '@/Context/DataContext';
 import { getCompanyCapacity, getYearComparison } from '@/lib/analyse/analytic';
-import { YearComparisonResult } from '@/lib/analyse/types';
+import { CapacityAPIResult, YearComparisonResult } from '@/lib/analyse/types';
 import { CapacitesEntreprises } from './capacite-entreprise-tab/capacite-entreprises';
 
 export function AnalyticsTabs() {
   const [activeTab, setActiveTab] = useState('vue-globale');
   const {selectedYears}=useData();
-  const [data, setData] = useState<YearComparisonResult>();
+  const [yearComparisondata, setyearComparisonData] = useState<YearComparisonResult>();
+  const [companyCapacitydata, setcompanyCapacityData] = useState<CapacityAPIResult>();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!selectedYears || selectedYears.length < 2) {
-      setData(undefined); // Reset les données si pas assez d'années
+      setyearComparisonData(undefined); // Reset les données si pas assez d'années
       return;
     }
     const fetchData = async () => {
@@ -25,7 +26,8 @@ export function AnalyticsTabs() {
       try {
         const yearComparison = await getYearComparison(selectedYears);
         const companyCapacity =await getCompanyCapacity ([selectedYears[0]]);
-        setData(yearComparison);
+        setyearComparisonData(yearComparison);
+        setcompanyCapacityData(companyCapacity);
         console.log("Données récupérées:", yearComparison);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
@@ -82,14 +84,14 @@ export function AnalyticsTabs() {
     return <div>Chargement...</div>;
   }
 
-  if (!data) {
+  if (!yearComparisondata && !companyCapacitydata) {
     return <div>Aucune donnée disponible</div>;
   }
   const renderTabContent = (tabId: string) => {
     switch (tabId) {
       case 'capacites-entreprises':
         return (
-          <CapacitesEntreprises />
+          <CapacitesEntreprises data={companyCapacitydata} />
         );
 
       case 'fidelite-entreprises':
@@ -193,7 +195,7 @@ export function AnalyticsTabs() {
 
       case 'vue-globale':
       default:
-        return <VueGlobale data={data} />;
+        return <VueGlobale data={yearComparisondata} />;
     }
   };
 
