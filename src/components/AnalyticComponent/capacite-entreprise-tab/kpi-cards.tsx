@@ -37,7 +37,6 @@ export function KpiCards({
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">Capacité Totale</p>
           <p className="text-3xl font-bold text-foreground">{totalCapacity}</p>
-          <p className="text-xs text-green-600 dark:text-green-400">+18% vs 2023</p>
         </div>
       </Card>
 
@@ -53,7 +52,6 @@ export function KpiCards({
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">Taux Utilisation</p>
           <p className="text-3xl font-bold text-foreground">{utilizationRate}%</p>
-          <p className="text-xs text-green-600 dark:text-green-400">+3.2% vs 2023</p>
         </div>
       </Card>
     </div>

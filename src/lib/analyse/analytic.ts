@@ -6,7 +6,7 @@ export const getTopSupervisors = async (
   limit?: number
 ) => {
   try {
-    const params = new URLSearchParams({ action: "top-supervisors", years: years.join(",") });
+    const params = new URLSearchParams({ action: "top-supervisors", year: years.join(",") });
     if (categorie) params.append("categorie", categorie);
     if (limit) params.append("limit", String(limit));
 
@@ -30,7 +30,7 @@ export const getTopSupervisors = async (
 
 export const getCompanyFiliere = async (years: string[], minStudents?: number) => {
   try {
-    const params = new URLSearchParams({ action: "company-filiere", years: years.join(",") });
+    const params = new URLSearchParams({ action: "company-filiere", year: years.join(",") });
     if (minStudents !== undefined) params.append("minStudents", String(minStudents));
 
     const res = await fetch(`/api/analytics?${params}`, {
@@ -44,7 +44,7 @@ export const getCompanyFiliere = async (years: string[], minStudents?: number) =
     }
 
     const result = await res.json();
-    return result.data as CompanyFiliereResult;
+    return result.data as CompanyFiliereResult[];
   } catch (error) {
     console.error("Erreur company-filiere:", error);
     throw error;
@@ -72,7 +72,7 @@ export const getCompanyLoyalty = async (
     }
 
     const result = await res.json();
-    return result.data as CompanyLoyaltyResult;
+    return result.data as CompanyLoyaltyResult[];
   } catch (error) {
     console.error("Erreur company-loyalty:", error);
     throw error;

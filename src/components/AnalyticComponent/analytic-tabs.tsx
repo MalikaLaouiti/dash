@@ -5,15 +5,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { VueGlobale } from './vue-global-tab/vue-global';
 import { useData } from '@/Context/DataContext';
-import { getCompanyCapacity, getYearComparison } from '@/lib/analyse/analytic';
-import { CapacityAPIResult, YearComparisonResult } from '@/lib/analyse/types';
+import { getCompanyCapacity, getCompanyFiliere, getCompanyLoyalty, getTopSupervisors, getYearComparison } from '@/lib/analyse/analytic';
+import { CapacityAPIResult, CompanyFiliereResult, CompanyLoyaltyResult, TopSupervisorResult, YearComparisonResult } from '@/lib/analyse/types';
 import { CapacitesEntreprises } from './capacite-entreprise-tab/capacite-entreprises';
+import FideliteEntreprises from './fidelite-entreprise/fidelete-entreprise';
+import { ClassementSuperviseurs } from './classement-encadrant';
+import MatriceFilieres from './matrice-filiere';
 
 export function AnalyticsTabs() {
   const [activeTab, setActiveTab] = useState('vue-globale');
   const {selectedYears}=useData();
   const [yearComparisondata, setyearComparisonData] = useState<YearComparisonResult>();
   const [companyCapacitydata, setcompanyCapacityData] = useState<CapacityAPIResult>();
+  const [loyalitydata, setLoyalityData] = useState<CompanyLoyaltyResult[]>([]);
+  const [ClassementData, setClassementData] = useState<TopSupervisorResult[]>([]);
+  const [MatriceFilièreData, setMatriceFiliereData] = useState<CompanyFiliereResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -26,8 +32,16 @@ export function AnalyticsTabs() {
       try {
         const yearComparison = await getYearComparison(selectedYears);
         const companyCapacity =await getCompanyCapacity ([selectedYears[0]]);
+        const loyality = await getCompanyLoyalty (selectedYears);
+        const ClassementData = await getTopSupervisors (selectedYears,"academique",20);
+        const MatriceFilièreData= await getCompanyFiliere(selectedYears);
+        
         setyearComparisonData(yearComparison);
         setcompanyCapacityData(companyCapacity);
+        setLoyalityData(loyality);
+        setClassementData([ClassementData]);
+        setMatriceFiliereData(MatriceFilièreData);
+
         console.log("Données récupérées:", yearComparison);
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
@@ -96,101 +110,17 @@ export function AnalyticsTabs() {
 
       case 'fidelite-entreprises':
         return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Fidélité Entreprises
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Suivi de la fidélité des entreprises et analyse des réitérations de partenariats.
-              </p>
-            </div>
-            <Card className="p-8 border border-border bg-card">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Entreprises Récurrentes</p>
-                  <p className="text-3xl font-bold text-foreground">142</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+9% vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Taux Fidélité</p>
-                  <p className="text-3xl font-bold text-foreground">91%</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+3.5% vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Nouvelles Entreprises</p>
-                  <p className="text-3xl font-bold text-foreground">14</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Impact: +26 stages</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <FideliteEntreprises data={loyalitydata} />
         );
 
       case 'classement-superviseurs':
         return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Classement Superviseurs
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Performance et classement des superviseurs académiques et professionnels.
-              </p>
-            </div>
-            <Card className="p-8 border border-border bg-card">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Superviseurs Actifs</p>
-                  <p className="text-3xl font-bold text-foreground">47</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+2 vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Note Moyenne</p>
-                  <p className="text-3xl font-bold text-foreground">4.7/5</p>
-                  <p className="text-xs text-green-600 dark:text-green-400">+0.2 vs année précédente</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Charge Moyenne</p>
-                  <p className="text-3xl font-bold text-foreground">5.3</p>
-                  <p className="text-xs text-muted-foreground">étudiants par superviseur</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <ClassementSuperviseurs data={ClassementData}/>
         );
 
       case 'matrice-filieres':
         return (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                Matrice Filières
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Distribution des stages par filière académique et secteur d'activité.
-              </p>
-            </div>
-            <Card className="p-8 border border-border bg-card">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Filières Représentées</p>
-                  <p className="text-3xl font-bold text-foreground">8</p>
-                  <p className="text-xs text-muted-foreground">Informatique, Génie, etc.</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Distribution la Plus Importante</p>
-                  <p className="text-3xl font-bold text-foreground">Informatique</p>
-                  <p className="text-xs text-muted-foreground">38% des stages</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Secteurs d'Activité</p>
-                  <p className="text-3xl font-bold text-foreground">24</p>
-                  <p className="text-xs text-muted-foreground">secteurs différents</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <MatriceFilieres data={MatriceFilièreData} />
         );
 
       case 'vue-globale':

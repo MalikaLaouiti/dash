@@ -24,15 +24,24 @@ export interface CompanyFiliereResult {
   annee: string;
 }
 
-export interface CompanyLoyaltyResult {
-  companyId: string;
-  companyName: string;
-  secteur: string;
-  anneesActivite: string[];
-  nombreAnneesActive: number;
-  totalEtudiantsAccueillis: number;
-  estFidele: boolean;
-  tauxRetention: number;
+export interface CompanyLoyaltyResult {           
+  companyName: string;             
+  secteur: string;                 
+  anneesPresence: string[];       
+  nombreAnnees: number;            
+  multiplicateurs: number[];       
+  scoreFidelite: number;          
+  totalStagiaires: number;        
+  croissanceConstante: boolean;    
+  estFidele: boolean;             
+  periodeAnalyse: {               
+    debut: string;                  
+    fin: string;                   
+  };
+  anneesActivite?: string[];        
+  nombreAnneesActive?: number;     
+  totalEtudiantsAccueillis?: number;
+  tauxRetention?: number;          
 }
 
 export interface CapacityAPIResult {

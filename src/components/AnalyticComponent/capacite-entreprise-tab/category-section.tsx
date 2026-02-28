@@ -33,7 +33,7 @@ export function CategorySection({ category, companies, totalCapacity, searchQuer
         </Badge>
       </div>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCompanies.map((company) => (
+        {filteredCompanies.slice(0, 9).map((company) => (
           <CompanyCard key={company.companyName} company={company} category={category} />
         ))}
       </div>
