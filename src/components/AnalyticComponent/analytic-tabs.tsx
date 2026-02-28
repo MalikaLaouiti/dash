@@ -33,13 +33,14 @@ export function AnalyticsTabs() {
         const yearComparison = await getYearComparison(selectedYears);
         const companyCapacity =await getCompanyCapacity ([selectedYears[0]]);
         const loyality = await getCompanyLoyalty (selectedYears);
-        const ClassementData = await getTopSupervisors (selectedYears,"academique",20);
+        const ClassementData = await getTopSupervisors ([(selectedYears.sort())[0]],"academique",20);
+        console.log("ClassementData:", ClassementData);
         const MatriceFilièreData= await getCompanyFiliere(selectedYears);
         
         setyearComparisonData(yearComparison);
         setcompanyCapacityData(companyCapacity);
         setLoyalityData(loyality);
-        setClassementData([ClassementData]);
+        setClassementData(ClassementData);
         setMatriceFiliereData(MatriceFilièreData);
 
         console.log("Données récupérées:", yearComparison);

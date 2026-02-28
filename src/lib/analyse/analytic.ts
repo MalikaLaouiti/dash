@@ -21,7 +21,9 @@ export const getTopSupervisors = async (
     }
 
     const result = await res.json();
-    return result.data as TopSupervisorResult;
+    console.log("Résultat top-supervisors:", result);
+    return result.data as TopSupervisorResult[];
+
   } catch (error) {
     console.error("Erreur top-supervisors:", error);
     throw error;

@@ -5,10 +5,11 @@ export interface TopSupervisorResult {
   prenom: string;
   email: string;
   categorie: 'professionnel' | 'academique';
+  annee: string;
   nombreEtudiants: number;
   moyenneNotes: number;
   meilleurNote: number;
-  annee: string;
+  
 }
 
 export interface CompanyFiliereResult {

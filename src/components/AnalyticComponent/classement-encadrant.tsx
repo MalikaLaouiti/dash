@@ -26,71 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TopSupervisorResult } from '@/lib/analyse/types';
 
-export interface TopSupervisorResult {
-  supervisorId: string;
-  prenom: string;
-  email: string;
-  categorie: 'professionnel' | 'academique';
-  nombreEtudiants: number;
-  moyenneNotes: number;
-  meilleurNote: number;
-  annee: string;
-}
-
-// Mock data based on the provided JSON structure
-const mockData: TopSupervisorResult[] = [
-  {
-    supervisorId: '1',
-    prenom: 'Kais Ben Salah',
-    email: 'kais.bensalah@example.com',
-    categorie: 'academique',
-    nombreEtudiants: 13,
-    moyenneNotes: 14.77,
-    meilleurNote: 17,
-    annee: '2024',
-  },
-  {
-    supervisorId: '2',
-    prenom: 'Sami Bhiri',
-    email: 'sami.bhiri@example.com',
-    categorie: 'academique',
-    nombreEtudiants: 2,
-    moyenneNotes: 14.75,
-    meilleurNote: 17,
-    annee: '2024',
-  },
-  {
-    supervisorId: '3',
-    prenom: 'Samer Lahouar',
-    email: 'samer.lahouar@example.com',
-    categorie: 'academique',
-    nombreEtudiants: 1,
-    moyenneNotes: 14,
-    meilleurNote: 14,
-    annee: '2024',
-  },
-  {
-    supervisorId: '4',
-    prenom: 'Riadh Ayach',
-    email: 'riadh.ayach@example.com',
-    categorie: 'academique',
-    nombreEtudiants: 2,
-    moyenneNotes: 13,
-    meilleurNote: 13,
-    annee: '2024',
-  },
-  {
-    supervisorId: '5',
-    prenom: 'Nadi Bali',
-    email: 'nadi.bali@example.com',
-    categorie: 'academique',
-    nombreEtudiants: 1,
-    moyenneNotes: 13,
-    meilleurNote: 13,
-    annee: '2024',
-  },
-];
 
 export function ClassementSuperviseurs({ data }: { data: TopSupervisorResult[] }) {
   const [filterCategorie, setFilterCategorie] = useState<'all' | 'academique' | 'professionnel'>('all');
@@ -161,7 +98,7 @@ export function ClassementSuperviseurs({ data }: { data: TopSupervisorResult[] }
               <p className="text-sm text-muted-foreground font-medium">Étudiants</p>
               <Award className="w-4 h-4 text-primary" />
             </div>
-            <p className="text-3xl font-bold text-foreground">{totalEtudiants}</p>
+            {/* <p className="text-3xl font-bold text-foreground">{totalEtudiants}</p> */}
             <p className="text-xs text-muted-foreground">
               {(totalEtudiants / filteredData.length).toFixed(1)} par superviseur
             </p>
@@ -182,7 +119,7 @@ export function ClassementSuperviseurs({ data }: { data: TopSupervisorResult[] }
         <Card className="p-6 border border-border/50 bg-gradient-to-br from-card to-card/50">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground font-medium">Top Superviseur</p>
-            <p className="text-xl font-bold text-foreground truncate">{topSupervisor?.prenom}</p>
+            <p className="text-xl font-bold text-foreground truncate">{topSupervisor?.supervisorId}</p>
             <p className="text-xs text-muted-foreground">
               {topSupervisor?.nombreEtudiants} étudiants
             </p>
@@ -294,7 +231,7 @@ export function ClassementSuperviseurs({ data }: { data: TopSupervisorResult[] }
                 >
                   <td className="py-3 px-4">
                     <div>
-                      <p className="font-medium text-foreground">{supervisor.prenom}</p>
+                      <p className="font-medium text-foreground">{supervisor.supervisorId}</p>
                       <p className="text-xs text-muted-foreground">{supervisor.email}</p>
                     </div>
                   </td>
