@@ -6,7 +6,7 @@ import {
   KpiSuperviseurs,
   BarChartEntry,
   ScatterEntry,
-} from '../types';
+} from '@/hooks/types-classement';
 
 interface UseClassementDataReturn {
   filteredData: TopSupervisorResult[];
