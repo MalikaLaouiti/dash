@@ -26,97 +26,6 @@ interface MatriceFilièresProps {
   data?: CompanyFiliereResult[];
 }
 
-// ── Mock data ────────────────────────────────────────────────────────────────
-const mockData: CompanyFiliereResult[] = [
-  {
-    companyId: 'flesk-groupe',
-    companyName: 'Flesk Groupe',
-    secteur: 'Informatique',
-    annee: '2024',
-    totalEtudiants: 13,
-    filieres: [
-      { filiere: 'MP2_GL', nombreEtudiants: 2, moyenneNotes: 14.5 },
-      { filiere: 'MP2_MOBX', nombreEtudiants: 3, moyenneNotes: 15.2 },
-      { filiere: 'MP2_IA', nombreEtudiants: 4, moyenneNotes: 16.0 },
-      { filiere: 'MP2_CLOUD', nombreEtudiants: 2, moyenneNotes: 13.8 },
-      { filiere: 'MP2_SEC', nombreEtudiants: 1, moyenneNotes: 14.0 },
-      { filiere: 'MP2_DATA', nombreEtudiants: 2, moyenneNotes: 15.5 },
-    ],
-  },
-  {
-    companyId: 'ooredoo-tunis',
-    companyName: 'Ooredoo Tunis',
-    secteur: 'Télécommunications',
-    annee: '2024',
-    totalEtudiants: 9,
-    filieres: [
-      { filiere: 'MP2_GL', nombreEtudiants: 2, moyenneNotes: 13.5 },
-      { filiere: 'MP2_MOBX', nombreEtudiants: 2, moyenneNotes: 14.0 },
-      { filiere: 'MP2_IA', nombreEtudiants: 1, moyenneNotes: 15.0 },
-      { filiere: 'MP2_SEC', nombreEtudiants: 3, moyenneNotes: 16.2 },
-      { filiere: 'MP2_DATA', nombreEtudiants: 1, moyenneNotes: 14.5 },
-    ],
-  },
-  {
-    companyId: 'keyrus',
-    companyName: 'Keyrus',
-    secteur: 'Conseil',
-    annee: '2024',
-    totalEtudiants: 12,
-    filieres: [
-      { filiere: 'MP2_MOBX', nombreEtudiants: 2, moyenneNotes: 15.0 },
-      { filiere: 'MP2_IA', nombreEtudiants: 3, moyenneNotes: 16.5 },
-      { filiere: 'MP2_CLOUD', nombreEtudiants: 1, moyenneNotes: 14.0 },
-      { filiere: 'MP2_SEC', nombreEtudiants: 2, moyenneNotes: 15.8 },
-      { filiere: 'MP2_DATA', nombreEtudiants: 4, moyenneNotes: 17.0 },
-    ],
-  },
-  {
-    companyId: 'orange-tunisie',
-    companyName: 'Orange Tunisie',
-    secteur: 'Télécommunications',
-    annee: '2024',
-    totalEtudiants: 6,
-    filieres: [
-      { filiere: 'MP2_MOBX', nombreEtudiants: 2, moyenneNotes: 14.5 },
-      { filiere: 'MP2_CLOUD', nombreEtudiants: 3, moyenneNotes: 15.0 },
-      { filiere: 'MP2_DATA', nombreEtudiants: 1, moyenneNotes: 13.5 },
-    ],
-  },
-  {
-    companyId: 'uptech',
-    companyName: 'UPTECH',
-    secteur: 'Technologie',
-    annee: '2024',
-    totalEtudiants: 3,
-    filieres: [
-      { filiere: 'MP2_GL', nombreEtudiants: 1, moyenneNotes: 14.0 },
-      { filiere: 'MP2_CLOUD', nombreEtudiants: 2, moyenneNotes: 15.5 },
-    ],
-  },
-  {
-    companyId: 'tekup',
-    companyName: 'Tekup',
-    secteur: 'Formation',
-    annee: '2024',
-    totalEtudiants: 3,
-    filieres: [
-      { filiere: 'MP2_MOBX', nombreEtudiants: 1, moyenneNotes: 13.0 },
-      { filiere: 'MP2_IA', nombreEtudiants: 2, moyenneNotes: 14.5 },
-    ],
-  },
-  {
-    companyId: 'iss4u',
-    companyName: 'ISS4U',
-    secteur: 'Sécurité',
-    annee: '2024',
-    totalEtudiants: 3,
-    filieres: [
-      { filiere: 'MP2_GL', nombreEtudiants: 1, moyenneNotes: 13.5 },
-      { filiere: 'MP2_SEC', nombreEtudiants: 2, moyenneNotes: 16.0 },
-    ],
-  },
-];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const COLORS = [
@@ -133,15 +42,13 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFiliere, setSelectedFiliere] = useState<string | null>(null);
 
-  const resolvedData = data && data.length > 0 ? data : mockData;
-
   const kpiMetrics = useMemo(() => {
-    const totalCompanies = resolvedData.length;
+    const totalCompanies = data.length;
     const allFilieres = new Set<string>();
     let totalStudents = 0;
     let totalPartnerships = 0;
 
-    resolvedData.forEach((company) => {
+    data.forEach((company) => {
       totalStudents += safeNum(company.totalEtudiants);
       (company.filieres ?? []).forEach((f) => {
         allFilieres.add(f.filiere);
@@ -161,21 +68,21 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
         ? (totalStudents / allFilieres.size).toFixed(1)
         : '0',
     };
-  }, [resolvedData]);
+  }, [data]);
 
   // ── All unique filières ───────────────────────────────────────────────────
   const allFilieres = useMemo(() => {
     const set = new Set<string>();
-    resolvedData.forEach((c) => (c.filieres ?? []).forEach((f) => set.add(f.filiere)));
+    data.forEach((c) => (c.filieres ?? []).forEach((f) => set.add(f.filiere)));
     return Array.from(set).sort();
-  }, [resolvedData]);
+  }, [data]);
 
   // ── Bar chart: students per filière (aggregated across companies) ──────────
   const filiereDistributionData = useMemo(() =>
     allFilieres.map((filiere) => {
       let students = 0;
       let companies = 0;
-      resolvedData.forEach((company) => {
+      data.forEach((company) => {
         const match = (company.filieres ?? []).find((f) => f.filiere === filiere);
         if (match) {
           students += safeNum(match.nombreEtudiants);
@@ -184,15 +91,15 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
       });
       return { name: filiere, students, companies };
     }),
-  [resolvedData, allFilieres]);
+  [data, allFilieres]);
 
   // ── Pie chart: top companies by total students ────────────────────────────
   const companyStudentData = useMemo(() =>
-    [...resolvedData]
+    [...data]
       .map((c) => ({ name: c.companyName ?? c.companyId, value: safeNum(c.totalEtudiants) }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8),
-  [resolvedData]);
+  [data]);
 
   // ── Filtered filière buttons ──────────────────────────────────────────────
   const filteredFilieres = useMemo(() =>
@@ -204,7 +111,7 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
   // Companies for the selected filière
   const companiesForFiliere = useMemo(() => {
     if (!selectedFiliere) return [];
-    return resolvedData
+    return data
       .flatMap((company) => {
         const match = (company.filieres ?? []).find((f) => f.filiere === selectedFiliere);
         if (!match) return [];
@@ -217,7 +124,7 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
         }];
       })
       .sort((a, b) => b.nombreEtudiants - a.nombreEtudiants);
-  }, [resolvedData, selectedFiliere]);
+  }, [data, selectedFiliere]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -308,7 +215,7 @@ export default function MatriceFilieres({ data }:{ data: CompanyFiliereResult[] 
 
         <div className="flex flex-wrap gap-2 mb-6">
           {filteredFilieres.map((filiere) => {
-            const count = resolvedData.filter((c) =>
+            const count = data.filter((c) =>
               (c.filieres ?? []).some((f) => f.filiere === filiere)
             ).length;
             return (

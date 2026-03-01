@@ -31,12 +31,11 @@ export function AnalyticsTabs() {
       setIsLoading(true);
       try {
         const yearComparison = await getYearComparison(selectedYears);
-        const companyCapacity =await getCompanyCapacity ([selectedYears[0]]);
+        const companyCapacity =await getCompanyCapacity ([(selectedYears.reverse())[0]]);
         const loyality = await getCompanyLoyalty (selectedYears);
-        const ClassementData = await getTopSupervisors ([(selectedYears.sort())[0]],"academique",20);
-        console.log("ClassementData:", ClassementData);
-        const MatriceFilièreData= await getCompanyFiliere(selectedYears);
-        
+        const ClassementData = await getTopSupervisors ([(selectedYears.reverse())[0]],"academique",20);
+        const MatriceFilièreData= await getCompanyFiliere((selectedYears.reverse())[0],2);
+
         setyearComparisonData(yearComparison);
         setcompanyCapacityData(companyCapacity);
         setLoyalityData(loyality);

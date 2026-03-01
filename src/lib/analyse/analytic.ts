@@ -30,9 +30,9 @@ export const getTopSupervisors = async (
   }
 };
 
-export const getCompanyFiliere = async (years: string[], minStudents?: number) => {
+export const getCompanyFiliere = async (years: string, minStudents?: number) => {
   try {
-    const params = new URLSearchParams({ action: "company-filiere", year: years.join(",") });
+    const params = new URLSearchParams({ action: "company-filiere", year: years });
     if (minStudents !== undefined) params.append("minStudents", String(minStudents));
 
     const res = await fetch(`/api/analytics?${params}`, {
