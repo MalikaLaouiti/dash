@@ -9,8 +9,8 @@ import { getCompanyCapacity, getCompanyFiliere, getCompanyLoyalty, getTopSupervi
 import { CapacityAPIResult, CompanyFiliereResult, CompanyLoyaltyResult, TopSupervisorResult, YearComparisonResult } from '@/lib/analyse/types';
 import { CapacitesEntreprises } from './capacite-entreprise-tab/capacite-entreprises';
 import FideliteEntreprises from './fidelite-entreprise/fidelete-entreprise';
-import { ClassementSuperviseurs } from './classement-encadrant';
-import MatriceFilieres from './matrice-filiere';
+import { ClassementSuperviseurs } from './classement-encadrant/classement-encadrant';
+import MatriceFilieres from './matrice-filieres/matrice-filiere';
 
 export function AnalyticsTabs() {
   const [activeTab, setActiveTab] = useState('vue-globale');
@@ -22,36 +22,42 @@ export function AnalyticsTabs() {
   const [MatriceFilièreData, setMatriceFiliereData] = useState<CompanyFiliereResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!selectedYears || selectedYears.length < 2) {
-      setyearComparisonData(undefined); // Reset les données si pas assez d'années
-      return;
+useEffect(() => {
+  if (!selectedYears || selectedYears.length < 2) {
+    setyearComparisonData(undefined);
+    return;
+  }
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // ⚠️  .reverse() mute le tableau original — on fait une copie d'abord
+      const sortedYears = [...selectedYears].sort((a, b) => b.localeCompare(a));
+      const latestYear  = sortedYears[0]; // année la plus récente
+
+      const [yearComparison, companyCapacity, loyalty, classement, matriceFilieres] =
+        await Promise.all([
+          getYearComparison(selectedYears),
+          getCompanyCapacity([latestYear]),
+          getCompanyLoyalty(selectedYears),
+          getTopSupervisors([latestYear], 'academique', 20),
+          getCompanyFiliere(latestYear, 2),
+        ]);
+
+      setyearComparisonData(yearComparison);
+      setcompanyCapacityData(companyCapacity);
+      setLoyalityData(loyalty);
+      setClassementData(classement);
+      setMatriceFiliereData(matriceFilieres);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données:', error);
+    } finally {
+      setIsLoading(false);
     }
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const yearComparison = await getYearComparison(selectedYears);
-        const companyCapacity =await getCompanyCapacity ([(selectedYears.reverse())[0]]);
-        const loyality = await getCompanyLoyalty (selectedYears);
-        const ClassementData = await getTopSupervisors ([(selectedYears.reverse())[0]],"academique",20);
-        const MatriceFilièreData= await getCompanyFiliere((selectedYears.reverse())[0],2);
+  };
 
-        setyearComparisonData(yearComparison);
-        setcompanyCapacityData(companyCapacity);
-        setLoyalityData(loyality);
-        setClassementData(ClassementData);
-        setMatriceFiliereData(MatriceFilièreData);
-
-        console.log("Données récupérées:", yearComparison);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des données:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (selectedYears?.length > 0) fetchData();
-  }, [selectedYears]);
+  fetchData();
+}, [selectedYears]);
   
   const tabs = [
     {
