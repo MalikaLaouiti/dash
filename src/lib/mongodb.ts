@@ -14,9 +14,6 @@ if (!cached) {
 
 export async function connectDB() {
   if (cached.conn) {
-    console.log(' Using cached connection');
-    console.log('   Database:', cached.conn.connection.name);
-    console.log('   State:', cached.conn.connection.readyState);
     return cached.conn;
   }
 
@@ -25,13 +22,8 @@ export async function connectDB() {
       bufferCommands: false,
     };
 
-    console.log('Creating new MongoDB connection...');
     
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      console.log(' MongoDB connected successfully');
-      console.log('   Database:', mongoose.connection.name);
-      console.log('   Host:', mongoose.connection.host);
-      console.log('   Port:', mongoose.connection.port);
       return mongoose;
     }).catch((error) => {
       console.error(' MongoDB connection error:', error);

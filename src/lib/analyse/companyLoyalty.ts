@@ -147,6 +147,5 @@ export default async function getCompanyLoyaltyAnalysis(
   ];
 
   const results = await Company.aggregate(pipeline);
-  console.log("Pipeline results:", results.length);
   return results as CompanyLoyaltyResult[];
 }

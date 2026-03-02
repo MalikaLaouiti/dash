@@ -64,8 +64,6 @@ export function AppSidebar() {
     fetchYears();
   }, []);
 
-  console.log('Available years in sidebar:', availableYears);
-
   const handleYearClick = (year: string) => {
     if (isAnalyticsPage) {
       toggleAnalyticsYear(year);

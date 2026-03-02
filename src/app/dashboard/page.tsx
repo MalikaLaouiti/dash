@@ -17,8 +17,6 @@ export default function DashHome() {
   const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null)
 
 
-
-
   return (
     <div className="flex flex-col h-full">
       <HeaderSection/>
@@ -46,7 +44,7 @@ export default function DashHome() {
         </div>
       )}
 
-      <Main/>
+      <Main searchQuery={searchQuery} searchFilters={searchFilters}/>
       
     </div>
   )

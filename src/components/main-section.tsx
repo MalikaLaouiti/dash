@@ -2,18 +2,14 @@
 
 import { DataTable } from "@/components/DataTable/data-table";
 import { JsonPreview } from "@/components/DataTable/json-preview";
-import { UsageInstructions } from "@/components/usage-instructions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useState, useMemo, useEffect, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { type ParsedExcelData } from "@/lib/excel-parser";
 import { useData } from "@/Context/DataContext";
 import { getFromDatabase } from "@/lib/load-upload";
-import { LoaderCircle } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton";
 import DataResume from "./data-resume";
-// import { getTopSupervisors } from "@/lib/analyse";
 
 interface TabConfig {
     id: string;
@@ -22,24 +18,23 @@ interface TabConfig {
     content: React.ReactNode;
 }
 
+interface MainProps {
+    searchQuery?: string;
+    searchFilters?: {
+        students: boolean;
+        companies: boolean;
+        supervisors: boolean;
+    };
+}
 
-export default function Main() {
-    const [searchQuery, setSearchQuery] = useState<string>("");
-    const [searchFilters, setSearchFilters] = useState({
-        students: true,
-        companies: true,
-        supervisors: true,
-    });
+export default function Main({ searchQuery, searchFilters }: MainProps) {
     const { parsedData, setParsedData, selectedYear } = useData();
     const [activeTab, setActiveTab] = useState<string>("students");
-    const [searchResults, setSearchResults] = useState<ParsedExcelData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-  
 
     useEffect(() => {
         const loadData = async () => {
-
             setIsLoading(true);
             setError(null);
 
@@ -62,7 +57,6 @@ export default function Main() {
                         yearsCovered: data.summary?.yearsCovered || [selectedYear],
                     },
                 };
-                // console.log("Données chargées depuis la base de données:", parsingData.supervisors);
                 setParsedData(parsingData);
             } catch (err) {
                 console.error("Erreur lors du chargement des données:", err);
@@ -75,21 +69,82 @@ export default function Main() {
         loadData();
     }, [selectedYear]);
 
-    const displayData = useMemo(() => {
-        return searchResults || parsedData;
-    }, [searchResults, parsedData]);
+    // ✅ Filtrage correct basé sur parsedData (remplace allData inexistant)
+    const filteredData = useMemo((): ParsedExcelData | null => {
+        if (!parsedData) return null;
+
+        // Si pas de query, retourner les données filtrées par type seulement
+        const q = searchQuery?.toLowerCase().trim();
+
+        const filteredStudents =
+            searchFilters?.students !== false
+                ? q
+                    ? parsedData.students.filter(
+                          (s: any) =>
+                              s.cin?.toString().includes(q) ||
+                              s.nom?.toLowerCase().includes(q) ||
+                              s.prenom?.toLowerCase().includes(q) ||
+                              s.filiere?.toLowerCase().includes(q) ||
+                              s.sujet?.toLowerCase().includes(q) ||
+                              s.entreprise?.toLowerCase().includes(q) ||
+                              s.encadreur_academique?.toLowerCase().includes(q)
+
+                      )
+                    : parsedData.students
+                : [];
+
+        const filteredCompanies =
+            searchFilters?.companies !== false
+                ? q
+                    ? parsedData.companies.filter((c: any) =>
+                          c.nom?.toLowerCase().includes(q) ||
+                          c.secteur?.toLowerCase().includes(q)
+                      )
+                    : parsedData.companies
+                : [];
+
+        const filteredSupervisors =
+            searchFilters?.supervisors !== false
+                ? q
+                    ? parsedData.supervisors.filter(
+                          (sv: any) =>
+                              sv.nom?.toLowerCase().includes(q) ||
+                              sv.prenom?.toLowerCase().includes(q) ||
+                              sv.departement?.toLowerCase().includes(q)
+                      )
+                    : parsedData.supervisors
+                : [];
+
+        return {
+            students: filteredStudents,
+            companies: filteredCompanies,
+            supervisors: filteredSupervisors,
+            summary: {
+                totalStudents: filteredStudents.length,
+                totalCompanies: filteredCompanies.length,
+                totalSupervisors: filteredSupervisors.length,
+                yearsCovered: parsedData.summary.yearsCovered,
+            },
+        };
+    }, [parsedData, searchQuery, searchFilters]);
+
+    const displayData = filteredData;
 
     const dynamicTabs = useMemo((): TabConfig[] => {
-        if (!parsedData) return [];
+        if (!parsedData || !displayData) return [];
 
-        const academicSupervisors = parsedData.supervisors.filter((s: { categorie: string; }) => s.categorie === "academique");
-        const professionalSupervisors = parsedData.supervisors.filter((s: { categorie: string; }) => s.categorie === "professionnel");
+        const academicSupervisors = displayData.supervisors.filter(
+            (s: any) => s.categorie === "academique"
+        );
+        const professionalSupervisors = displayData.supervisors.filter(
+            (s: any) => s.categorie === "professionnel"
+        );
 
         return [
             {
                 id: "students",
                 label: "Étudiants",
-                count: parsedData.students.length,
+                count: displayData.students.length,
                 content: (
                     <DataTable
                         data={displayData}
@@ -103,7 +158,7 @@ export default function Main() {
             {
                 id: "companies",
                 label: "Entreprises",
-                count: parsedData.companies.length,
+                count: displayData.companies.length,
                 content: (
                     <DataTable
                         data={displayData}
@@ -154,7 +209,7 @@ export default function Main() {
     if (isLoading) {
         return (
             <Card className="p-9 m-9 space-y-2">
-                <CardHeader >
+                <CardHeader>
                     <Skeleton className="h-4 w-2/3" />
                     <Skeleton className="h-4 w-1/2" />
                 </CardHeader>
@@ -191,12 +246,21 @@ export default function Main() {
                 </Card>
             )}
 
-            {parsedData && (
+            {parsedData && displayData && (
                 <>
-                    <DataResume parsedData={parsedData} searchQuery={searchQuery} selectedYear={selectedYear} />
+                    <DataResume
+                        parsedData={displayData}
+                        searchQuery={searchQuery || ""}
+                        selectedYear={selectedYear}
+                    />
                     {dynamicTabs.length > 0 && (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)` }}>
+                            <TabsList
+                                className="grid w-full"
+                                style={{
+                                    gridTemplateColumns: `repeat(${dynamicTabs.length}, 1fr)`,
+                                }}
+                            >
                                 {dynamicTabs.map((tab) => (
                                     <TabsTrigger key={tab.id} value={tab.id}>
                                         {tab.label} {tab.count > 0 && `(${tab.count})`}
